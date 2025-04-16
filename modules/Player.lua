@@ -89,6 +89,13 @@ function Player:OnInitialize()
 	self.Bar = Quartz3.CastBarTemplate:new(self, "player", MODNAME, L["Player"], db)
 	castBar = self.Bar.Bar
 
+	
+end
+
+
+function Player:OnEnable()
+	self.Bar:RegisterEvents()
+	self:ApplySettings()
 	channelingTicks = {
 		-- warlock
 		[SpellInfo(1120)] = 5, -- drain soul
@@ -109,12 +116,6 @@ function Player:OnInitialize()
 		-- hunter
 		[SpellInfo(1510)] = 6, -- volley
 	} 
-end
-
-
-function Player:OnEnable()
-	self.Bar:RegisterEvents()
-	self:ApplySettings()
 end
 
 function Player:OnDisable()

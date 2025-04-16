@@ -192,19 +192,7 @@ CastBarTemplate.ToggleCastNotInterruptible = ToggleCastNotInterruptible
 ----------------------------
 -- Event Handlers
 
-function CastBarTemplate:UNIT_SPELLCAST_SENT(event, unit, spell, rank, target)
-	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") then
-		return
-	end
-	if target then
-		self.targetName = target
-	else
-		-- auto selfcast? is this needed, even?
-		self.targetName = playerName
-	end
 
-	call(self, "UNIT_SPELLCAST_SENT", unit, spell, rank, target)
-end
 local function getUnitFromGuid(guid)
 	local _, unit	= UnitExists("player")
 	if unit == guid then
@@ -228,9 +216,11 @@ function CastBarTemplate:UNIT_CASTEVENT()
 	local unit, event = getUnitFromGuid(caster)
 	if eventType == "START" then
 		event = "UNIT_SPELLCAST_START"
+		self:UNIT_SPELLCAST_SENT(eventType, unit, spellId, nil, target)
 		self:UNIT_SPELLCAST_START(event, unit, {id = spellId, startTime = start, endTime = start + duration})
 	elseif eventType == "CHANNEL" then
 		event = "UNIT_SPELLCAST_CHANNEL_START"
+		self:UNIT_SPELLCAST_SENT(eventType, unit, spellId, nil, target)
 		self:UNIT_SPELLCAST_START(event, unit, {id = spellId, startTime = start, endTime = start + duration})
 	elseif eventType == "FAIL" then
 		self:UNIT_SPELLCAST_FAILED(event, unit)
@@ -241,6 +231,19 @@ function CastBarTemplate:UNIT_CASTEVENT()
 
 end
 
+function CastBarTemplate:UNIT_SPELLCAST_SENT(event, unit, spell, rank, target)
+	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") then
+		return
+	end
+	if target then
+		self.targetName = UnitName(target)
+	else
+		-- auto selfcast? is this needed, even?
+		self.targetName = playerName
+	end
+
+	call(self, "UNIT_SPELLCAST_SENT", unit, spell, rank, target)
+end
 
 function CastBarTemplate:UNIT_SPELLCAST_START(event, unit, spell)
 	if (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) or call(self, "PreShowCondition", unit) then
@@ -415,13 +418,13 @@ end
 
 
 function CastBarTemplate:UpdateUnit()
-	if UnitCastingInfo(self.unit) then
+	--[[if UnitCastingInfo(self.unit) then
 		self:UNIT_SPELLCAST_START("UNIT_SPELLCAST_START", self.unit)
 	elseif UnitChannelInfo(self.unit) then
 		self:UNIT_SPELLCAST_START("UNIT_SPELLCAST_CHANNEL_START", self.unit)
-	else
+	else]]
 		self:Hide()
-	end
+	--end
 end
 
 function CastBarTemplate:SetConfig(config)

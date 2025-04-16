@@ -25,6 +25,7 @@ local Player = Quartz3:GetModule("Player")
 
 local media = LibStub("LibSharedMedia-3.0")
 local lsmlist = AceGUIWidgetLSMlists
+local playerGuid = nil
 
 ----------------------------
 -- Upvalues
@@ -67,9 +68,13 @@ end
 function Latency:OnEnable()
 	self:RawHook(Player, "UNIT_SPELLCAST_START")
 	self:RawHook(Player, "UNIT_SPELLCAST_DELAYED")
-	
-	self:RegisterEvent("UNIT_SPELLCAST_SENT")
-	self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+
+	self:RegisterEvent("UNIT_CASTEVENT")
+
+	self:SecureHook("CastSpellByName")
+	self:SecureHook("CastSpell")
+	self:SecureHook("UseAction")
+
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)
 		if mtype == "statusbar" then
 			lagbox:SetTexture(media:Fetch("statusbar", override))
@@ -90,15 +95,21 @@ function Latency:OnDisable()
 	lagtext:Hide()
 end
 
-function Latency:UNIT_SPELLCAST_SENT(event, unit)
-	if unit ~= "player" and unit ~= "vehicle" then
-		return
-	end
-	sendTime = GetTime()
+function Latency:CastSpellByName(pass, onSelf)
+	sendTime = GetTime()	
 end
 
-function Latency:UNIT_SPELLCAST_START(object, bar, unit)
-	self.hooks[object].UNIT_SPELLCAST_START(object, bar, unit)
+function Latency:CastSpell(pass, onSelf)
+	sendTime = GetTime()	
+end
+
+function Latency:UseAction(pass, cursor, onSelf)
+	sendTime = GetTime()	
+end
+
+
+function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
+	self.hooks[object].UNIT_SPELLCAST_START(object, bar, unit, spell)
 	
 	local startTime, endTime = bar.startTime, bar.endTime
 	if not sendTime or not endTime then return end
@@ -162,7 +173,7 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit)
 				lagtext:SetPoint(point.."RIGHT", lagbox, relpoint.."RIGHT", -1, 0)
 			end
 		end
-		lagtext:Setext(format(L["%dms"], timeDiff*1000))
+		lagtext:SetText(format(L["%dms"], timeDiff*1000))
 		lagtext:Show()
 	else
 		lagtext:Hide()
@@ -180,6 +191,22 @@ function Latency:UNIT_SPELLCAST_DELAYED(object, bar, unit)
 	end
 end
 
+function Latency:UNIT_CASTEVENT()
+	local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
+	if playerGuid == nil then
+		_, playerGuid = UnitExists("player")
+	end
+	
+	if playerGuid ~= caster then return end
+	
+	if eventType == "FAIL" or  eventType == "CAST" then
+		lagbox:Hide()
+		lagtext:Hide()
+	end
+end
+
+
+--[[
 function Latency:UNIT_SPELLCAST_INTERRUPTED(event, unit)
 	if unit ~= "player" and unit ~= "vehicle" then
 		return
@@ -187,7 +214,7 @@ function Latency:UNIT_SPELLCAST_INTERRUPTED(event, unit)
 	lagbox:Hide()
 	lagtext:Hide()
 end
-
+]]
 function Latency:ApplySettings()
 	db = self.db.profile
 	if lagbox and self:IsEnabled() then

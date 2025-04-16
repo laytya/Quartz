@@ -1,14 +1,9 @@
 ## Title: Quartz
-## Interface: 30300
+## Interface: 11200
 ## Notes: Modular casting bar.
-## Author: Nevcairiel, Nymbia
+## Author: Nevcairiel, Nymbia, ported by LaYt
 ## Version: 3.0.3.1
 ## X-License: GPL v2
-## X-Credits: Ammo (some code based on PitBull_CastBar), kergoth (Tradeskill Merge module idea), Roartindon (Lag Embed mode for Latency module)
-## X-Curse-Packaged-Version: 3.0.3.1
-## X-Curse-Project-Name: Quartz
-## X-Curse-Project-ID: quartz
-## X-Curse-Repository-ID: wow/quartz/mainline
 
 ## Title-ruRU: Кварц
 ## Notes-ruRU: Модульная полоса применений.
@@ -19,7 +14,6 @@
 ## SavedVariables: Quartz3DB
 ## OptionalDeps: Ace3, LibSharedMedia-3.0, AceGUI-3.0-SharedMediaWidgets, SharedMedia, FlightMap
 
-#@no-lib-strip@
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 libs\AceAddon-3.0\AceAddon-3.0.xml
@@ -36,7 +30,6 @@ libs\AceHook-3.0\AceHook-3.0.xml
 
 libs\LibSharedMedia-3.0\lib.xml
 libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
-#@end-no-lib-strip@
 
 locale\locale.xml
 
@@ -57,5 +50,5 @@ modules\Mirror.lua
 #modules\Timer.lua
 #modules\Swing.lua
 #modules\Interrupt.lua
-#modules\Range.lua
+modules\Range.lua
 #modules\Flight.lua

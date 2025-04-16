@@ -22,7 +22,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
 local MODNAME = "Range"
 local Range = Quartz3:NewModule(MODNAME, "AceEvent-3.0")
 local Player = Quartz3:GetModule("Player")
-
+local getSlot = Quartz3.getSlot
+local playerGuid = nil
 ----------------------------
 -- Upvalues
 local CreateFrame, UIParent = CreateFrame, UIParent
@@ -40,14 +41,15 @@ local defaults ={
 do
 	local refreshtime = 0.25
 	local sincelast = 0
-	function OnUpdate(frame, elapsed)
-		sincelast = sincelast + elapsed
+	function OnUpdate()
+
+		sincelast = sincelast + arg1
 		if sincelast >= refreshtime then
 			sincelast = 0
 			if not castBar:IsVisible() or Player.Bar.fadeOut then
 				return f:SetScript("OnUpdate", nil)
 			end
-			if IsSpellInRange(spell, target) == 0 then
+			if IsActionInRange(spell) == 0 then
 				r, g, b = castBar:GetStatusBarColor()
 				modified = true
 				castBar:SetStatusBarColor(unpack(db.rangecolor))
@@ -70,59 +72,31 @@ function Range:OnInitialize()
 end
 
 function Range:OnEnable()
-	self:RegisterEvent("UNIT_SPELLCAST_SENT")
-	self:RegisterEvent("UNIT_SPELLCAST_START")
-	self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+	self:RegisterEvent("UNIT_CASTEVENT")
 end
 
 function Range:ApplySettings()
 	db = self.db.profile
 end
 
-function Range:UNIT_SPELLCAST_START(event, unit)
-	if unit ~= "player" then
+function Range:UNIT_CASTEVENT()
+	local caster, casttarget, eventType, spellId, start, duration, _= arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
+	if playerGuid == nil then
+		_, playerGuid = UnitExists("player")
+	end
+	if caster ~= playerGuid then
 		return
 	end
-	if not castBar then
-		castBar = Player.Bar.Bar
-	end
-	if target then
-		spell = UnitCastingInfo(unit)
-		modified, r, g, b = nil, nil, nil, nil
-		f:SetScript("OnUpdate", OnUpdate)
-	end
-end
-
-function Range:UNIT_SPELLCAST_CHANNEL_START(event, unit)
-	if unit ~= "player" then
-		return
-	end
-	if not castBar then
-		castBar = Player.Bar.Bar
-	end
-	if target then
-		spell = UnitChannelInfo(unit)
-		modified, r, g, b = nil, nil, nil, nil
-		f:SetScript("OnUpdate", OnUpdate)
-	end
-end
-
-function Range:UNIT_SPELLCAST_SENT(event, unit, _, _, name)
-	if unit ~= "player" then
-		return
-	end
-	if name then
-		if name == UnitName("player") then
-			target = "player"
-		elseif name == UnitName("target") then
-			target = "target"
-		elseif name == UnitName("focus") then
-			target = "focus"
-		else
-			target = nil
+	target = casttarget
+	if eventType == "START" or eventType == "CHANNEL" then
+		if not castBar then
+			castBar = Player.Bar.Bar
 		end
-	else
-		target = nil
+		if target then
+			spell = getSlot(spellId)
+			modified, r, g, b = nil, nil, nil, nil
+			f:SetScript("OnUpdate", OnUpdate)
+		end
 	end
 end
 
@@ -153,7 +127,7 @@ do
 						name = L["Out of Range Color"],
 						desc = L["Set the color to turn the cast bar when the target is out of range"],
 						get = function() return unpack(db.rangecolor) end,
-						set = function(info, ...) db.rangecolor = {...} end,
+						set = function(info, ...) db.rangecolor = {unpack(arg)} end,
 						order = 101,
 					},
 				},

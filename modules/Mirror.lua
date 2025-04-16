@@ -35,6 +35,7 @@ local lsmlist = AceGUIWidgetLSMlists
 -- GLOBALS: MIRRORTIMER_NUMTIMERS
 local AceCore = LibStub("AceCore-3.0")
 local _G = AceCore._G
+local new, del = AceCore.new, AceCore.del
 local CreateFrame, GetTime, UIParent, StaticPopupDialogs = CreateFrame, GetTime, UIParent, StaticPopupDialogs
 local GetMirrorTimerProgress, GetMirrorTimerInfo, GetCorpseRecoveryDelay = GetMirrorTimerProgress, GetMirrorTimerInfo, GetCorpseRecoveryDelay
 local UnitHealth = UnitHealth
@@ -48,8 +49,6 @@ local lfgshowbase, readycheckshowbase, readycheckshowduration
 local locked = true
 
 local db, getOptions
-
-local new, del
 
 local defaults = {
 	profile = {
@@ -165,14 +164,16 @@ end})
 
 local mirrorOnUpdate, fakeOnUpdate
 do
-	function mirrorOnUpdate(frame)
+	function mirrorOnUpdate()
+		local frame = this
 		local progress = GetMirrorTimerProgress(frame.mode) / 1000
 		progress = progress > frame.duration and frame.duration or progress
 		frame:SetValue(progress)
-		frame.TimeText:SetFormattedText(TimeFmt(progress))
+		frame.TimeText:SetText(format(TimeFmt(progress)))
 	end
 
-	function fakeOnUpdate(frame)
+	function fakeOnUpdate()
+		local frame = this
 		local currentTime = GetTime()
 		local endTime = frame.endTime
 
@@ -188,12 +189,12 @@ do
 		else
 			local remaining = currentTime - frame.startTime
 			frame:SetValue(endTime - remaining)
-			frame.TimeText:SetFormattedText(TimeFmt(endTime - currentTime))
+			frame.TimeText:SetText(format(TimeFmt(endTime - currentTime)))
 		end
 	end
 end
-local function OnHide(frame)
-	frame:SetScript("OnUpdate", nil)
+local function OnHide()
+	this:SetScript("OnUpdate", nil)
 end
 local mirrorbars = setmetatable({}, {
 	__index = function(t,k)
@@ -281,15 +282,6 @@ end
 
 do
 	local tblCache = setmetatable({}, {__mode="k"})
-	function new()
-		local entry = next(tblCache)
-		if entry then tblCache[entry] = nil else entry = {} end
-		return entry
-	end
-	function del(tbl)
-		wipe(tbl)
-		tblCache[tbl] = true
-	end
 	
 	local function sort(a,b)
 		return a.name < b.name
@@ -297,6 +289,51 @@ do
 	
 	local tmp = {}
 	local reztimermax = 0
+
+	local function updateTimers()
+		table_sort(tmp, sort)
+		local maxindex = 0
+		for k=1,getn(tmp) do
+			local v = tmp[k]
+			maxindex = k
+			local bar = mirrorbars[k]
+			bar.Text:SetText(v.name)
+			bar.Icon:SetTexture(v.texture)
+			bar.mode = v.mode
+			if v.isfake then
+				local startTime, endTime = v.startTime, v.endTime
+				bar:SetMinMaxValues(startTime, endTime)
+				bar.startTime = startTime
+				bar.endTime = endTime
+				bar.framenum = v.framenum
+				bar.which = v.mode
+				bar:Show()
+				bar:SetScript("OnUpdate", fakeOnUpdate)
+				if v.mode then
+					bar:SetStatusBarColor(unpack(db[v.mode]))
+				elseif v.color then
+					bar:SetStatusBarColor(unpack(v.color))
+				else
+					bar:SetStatusBarColor(1,1,1) --!! add option
+				end
+			else
+				local duration = v.duration
+				bar:SetMinMaxValues(0, duration)
+				bar.duration = duration
+				bar:Show()
+				bar:SetScript("OnUpdate", mirrorOnUpdate)
+				bar:SetStatusBarColor(unpack(db[v.mode]))
+				this:RegisterEvent("MIRROR_TIMER_PAUSE");
+	this:RegisterEvent("MIRROR_TIMER_STOP");
+	this:RegisterEvent("PLAYER_ENTERING_WORLD");
+	this.timer = nil;
+			end
+		end
+		for i = maxindex+1, getn(mirrorbars) do
+			mirrorbars[i]:Hide()
+		end
+	end
+
 	local function update()
 		Mirror.updateMirrorBar = nil
 		local currentTime = GetTime()
@@ -440,55 +477,40 @@ do
 				external[name] = del(v)
 			end
 		end
-		
-		table_sort(tmp, sort)
-		local maxindex = 0
-		for k=1,getn(tmp) do
-			local v = tmp[k]
-			maxindex = k
-			local bar = mirrorbars[k]
-			bar.Text:SetText(v.name)
-			bar.Icon:SetTexture(v.texture)
-			bar.mode = v.mode
-			if v.isfake then
-				local startTime, endTime = v.startTime, v.endTime
-				bar:SetMinMaxValues(startTime, endTime)
-				bar.startTime = startTime
-				bar.endTime = endTime
-				bar.framenum = v.framenum
-				bar.which = v.mode
-				bar:Show()
-				bar:SetScript("OnUpdate", fakeOnUpdate)
-				if v.mode then
-					bar:SetStatusBarColor(unpack(db[v.mode]))
-				elseif v.color then
-					bar:SetStatusBarColor(unpack(v.color))
-				else
-					bar:SetStatusBarColor(1,1,1) --!! add option
+		updateTimers()
+	end
+
+	function Mirror:MIRROR_TIMER_START(timer, value, maxValue, scale, paused, label)
+		if db.showmirror then
+			if timer ~= "UNKNOWN" then
+				local t = new()
+				tmp[getn(tmp)+1] = t
+				t.name = label
+				t.texture = icons[timer]
+				t.mode = timer
+				t.duration = maxvalue / 1000
+				t.isfake = false
+				if ( paused > 0 ) then 
+					t.paused = 1
+				else 
+					t.paused = nil 
 				end
-			else
-				local duration = v.duration
-				bar:SetMinMaxValues(0, duration)
-				bar.duration = duration
-				bar:Show()
-				bar:SetScript("OnUpdate", mirrorOnUpdate)
-				bar:SetStatusBarColor(unpack(db[v.mode]))
 			end
+
 		end
-		for i = maxindex+1, getn(mirrorbars) do
-			mirrorbars[i]:Hide()
-		end
-	end
-	
-	function Mirror:UpdateBars()
-		if not self.updateMirrorBar then
-			self.updateMirrorBar = self:ScheduleTimer(update, 0) -- API funcs dont return helpful crap until after the event.
-		end
-	end
-	function Mirror:MIRROR_TIMER_START()
 		
+		updateTimers()
 	end
-	function Mirror:MIRROR_TIMER_PAUSE()
+
+	function Mirror:MIRROR_TIMER_PAUSE(paused)
+		for k, v in pairs(tmp) do
+			if v.mode
+		end
+		if ( pause > 0 ) then
+			this.pause = 1
+		else
+			this.pause = nil
+		end
 	end
 	
 	function Mirror:MIRROR_TIMER_STOP()

@@ -4,7 +4,7 @@
 -- @release $Id: AceConfigDialog-3.0.lua 1139 2016-07-03 07:43:51Z nevcairiel $
 
 local LibStub = LibStub
-local MAJOR, MINOR = "AceConfigDialog-3.0", 65
+local MAJOR, MINOR = "AceConfigDialog-3.0", 66
 local AceConfigDialog, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConfigDialog then return end
@@ -2052,7 +2052,7 @@ do
 			for n = 1, l do
 				tinsert(path, arg[n])
 			end
-			tg:SelectByPath(unpack(arg))
+			tg:SelectByPath(unpack(path))
 		end
 		del(path)
 	end

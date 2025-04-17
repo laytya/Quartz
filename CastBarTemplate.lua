@@ -212,7 +212,7 @@ end
 function CastBarTemplate:UNIT_CASTEVENT()
 
 	local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
-
+  
 	local unit, event = getUnitFromGuid(caster)
 	if eventType == "START" then
 		event = "UNIT_SPELLCAST_START"
@@ -224,7 +224,7 @@ function CastBarTemplate:UNIT_CASTEVENT()
 		self:UNIT_SPELLCAST_START(event, unit, {id = spellId, startTime = start, endTime = start + duration})
 	elseif eventType == "FAIL" then
 		self:UNIT_SPELLCAST_FAILED(event, unit)
-	elseif eventType == "CAST" then
+	elseif eventType == "CAST" and self.casting  then
 		self:UNIT_SPELLCAST_STOP(event, unit)
 	end
 
@@ -369,6 +369,7 @@ function CastBarTemplate:SPELLCAST_DELAYED(e,d)
 
 	call(self, "UNIT_SPELLCAST_DELAYED", unit, d)
 end
+CastBarTemplate.SPELLCAST_CHANNEL_UPDATE=CastBarTemplate.SPELLCAST_DELAYED
 
 function CastBarTemplate:UNIT_SPELLCAST_DELAYED(event, unit)
 	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") or call(self, "PreShowCondition", unit) then
@@ -400,6 +401,17 @@ function CastBarTemplate:UNIT_SPELLCAST_DELAYED(event, unit)
 	call(self, "UNIT_SPELLCAST_DELAYED", unit)
 end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_UPDATE = CastBarTemplate.UNIT_SPELLCAST_DELAYED
+
+function CastBarTemplate:SPELLCAST_START(s,d)
+	printT({event,s,d})
+end
+function CastBarTemplate:SPELLCAST_CHANNEL_START(s,d)
+	printT({event,s,d})
+end
+function CastBarTemplate:SPELLCAST_CHANNEL_STOP(s,d)
+	self:UNIT_SPELLCAST_STOP(event, "player")
+end
+
 
 
 function CastBarTemplate:UNIT_SPELLCAST_INTERRUPTIBLE(event, unit)
@@ -569,6 +581,10 @@ function CastBarTemplate:RegisterEvents()
 	if self.unit == "player" then
 		self:RegisterEvent("SPELLCAST_INTERRUPTED")
 		self:RegisterEvent("SPELLCAST_DELAYED")
+		self:RegisterEvent("SPELLCAST_START")
+		self:RegisterEvent("SPELLCAST_CHANNEL_START")
+		self:RegisterEvent("SPELLCAST_CHANNEL_STOP")
+		self:RegisterEvent("SPELLCAST_CHANNEL_UPDATE")
 	end
 
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)

@@ -31,6 +31,9 @@ libs\AceHook-3.0\AceHook-3.0.xml
 libs\LibSharedMedia-3.0\lib.xml
 libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
 
+libs\AceLibrary\AceLibrary.lua
+libs\Gratuity-2.0\Gratuity-2.0.lua
+
 locale\locale.xml
 
 Quartz.lua

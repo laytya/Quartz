@@ -18,6 +18,8 @@
 ]]
 local Quartz3 = LibStub("AceAddon-3.0"):GetAddon("Quartz3")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
+local Gratuity = AceLibrary("Gratuity-2.0")
+
 
 local MODNAME = "Player"
 local Player = Quartz3:NewModule(MODNAME)
@@ -111,6 +113,7 @@ function Player:OnEnable()
 		--[SpellInfo(47540)] = 2, -- penance
 		-- mage
 		[SpellInfo(5143)] = 5, -- arcane missiles
+		["T3" .. SpellInfo(5143)] = 6, -- t3 waist arcane missiles
 		[SpellInfo(10)] = 5, -- blizzard
 		[SpellInfo(12051)] = 4, -- evocation
 		-- hunter
@@ -200,14 +203,21 @@ local function setBarTicks(ticknum)
 		end
 	end
 end
-
-
+local function checkMageT3Waist()
+	local link = GetInventoryItemLink("player", 6)
+	local _, _, link = string.find(link, "|c%x+|H(item:%d+:%d+:%d+:%d+)|h%[.-%]|h|r")
+	Gratuity:SetHyperlink(link)
+  local found = Gratuity:Find("duration of your Arcane Missiles",10,15,false,true,false)
+	return found ~= nil
+end
 
 local function getChannelingTicks(spell)
 	if not db.showticks then
 		return 0
 	end
-	
+	if spell == SpellInfo(5143) and checkMageT3Waist() then  -- Arcane Missiles
+		spell = "T3" .. spell
+	end
 	return channelingTicks[spell] or 0
 end
 

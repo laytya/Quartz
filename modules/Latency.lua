@@ -70,6 +70,8 @@ function Latency:OnEnable()
 	self:RawHook(Player, "UNIT_SPELLCAST_DELAYED")
 
 	self:RegisterEvent("UNIT_CASTEVENT")
+	self:RegisterEvent("SPELLCAST_CHANNEL_STOP")
+	
 
 	self:SecureHook("CastSpellByName")
 	self:SecureHook("CastSpell")
@@ -199,12 +201,16 @@ function Latency:UNIT_CASTEVENT()
 	
 	if playerGuid ~= caster then return end
 	
-	if eventType == "FAIL" or  eventType == "CAST" then
+	if eventType == "FAIL" or  (eventType == "CAST" and Player.Bar.casting) then
 		lagbox:Hide()
 		lagtext:Hide()
 	end
 end
 
+function Latency:SPELLCAST_CHANNEL_STOP(s,d)
+	lagbox:Hide()
+	lagtext:Hide()
+end
 
 --[[
 function Latency:UNIT_SPELLCAST_INTERRUPTED(event, unit)

@@ -195,8 +195,8 @@ end
 
 function Quartz3:ChatCommand(input)
 	if not input or trim(input) == "" then
-		--InterfaceOptionsFrame_OpenToCategory(Quartz3.optFrames.Profiles)
-		InterfaceOptionsFrame_OpenToCategory(Quartz3.optFrames.Quartz3)
+		InterfaceOptionsFrame_OpenToCategory("Quartz3","Profiles")
+		InterfaceOptionsFrame_OpenToCategory("Quartz3")
 	else
 		LibStub("AceConfigCmd-3.0").HandleCommand(Quartz3, "quartz", "Quartz3", input)
 	end
@@ -206,8 +206,7 @@ function Quartz3:SetupOptions()
 	self.optFrames = {}
 	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("Quartz3", getOptions)
 	self.optFrames.Quartz3 = ACD3:AddToBlizOptions("Quartz3", "Quartz 3", "Quartz3", "general")
-	self:RegisterModuleOptions("Profiles", LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db), "Profiles")
-	--Quartz3.options.args.Profiles.order = 100
+	self:RegisterModuleOptions("Profiles", LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db) , "Profiles")
 	self:RegisterChatCommand("quartz", "ChatCommand")
 	self:RegisterChatCommand("q3", "ChatCommand")
 end

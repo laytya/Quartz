@@ -323,9 +323,9 @@ do
 				bar:Show()
 				bar:SetScript("OnUpdate", mirrorOnUpdate)
 				bar:SetStatusBarColor(unpack(db[v.mode]))
-				this:RegisterEvent("MIRROR_TIMER_PAUSE");
-	this:RegisterEvent("MIRROR_TIMER_STOP");
-	this:RegisterEvent("PLAYER_ENTERING_WORLD");
+--				this:RegisterEvent("MIRROR_TIMER_PAUSE");
+--				this:RegisterEvent("MIRROR_TIMER_STOP");
+--				this:RegisterEvent("PLAYER_ENTERING_WORLD");
 	this.timer = nil;
 			end
 		end
@@ -480,6 +480,12 @@ do
 		updateTimers()
 	end
 
+	function Mirror:UpdateBars()
+		if not self.updateMirrorBar then
+			self.updateMirrorBar = self:ScheduleTimer(update, 0) -- API funcs dont return helpful crap until after the event.
+		end
+	end
+
 	function Mirror:MIRROR_TIMER_START(timer, value, maxValue, scale, paused, label)
 		if db.showmirror then
 			if timer ~= "UNKNOWN" then
@@ -502,15 +508,18 @@ do
 		updateTimers()
 	end
 
-	function Mirror:MIRROR_TIMER_PAUSE(paused)
+	function Mirror:MIRROR_TIMER_PAUSE(timer, paused)
+		printT(timer, paused)
 		for k, v in pairs(tmp) do
-			if v.mode
+			if v.mode == timer then
+				if ( paused > 0 ) then
+					v.paused = 1
+				else
+					v.paused = nil
+				end	
 		end
-		if ( pause > 0 ) then
-			this.pause = 1
-		else
-			this.pause = nil
 		end
+		
 	end
 	
 	function Mirror:MIRROR_TIMER_STOP()

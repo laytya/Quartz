@@ -286,20 +286,6 @@ do
 end
 
 do
-	local tt = CreateFrame("GameTooltip", "Quartz3TT", nil, "GameTooltipTemplate")
-	tt:SetOwner(WorldFrame,"ANCHOR_NONE")
-	tt:SetScript("OnHide", function ()
-    	this:SetOwner(WorldFrame,"ANCHOR_NONE")
-	end)
-	local function getActionNameFromTooltip(id)
-		tt:SetOwner(UIParent, "ANCHOR_NONE")
-		tt:ClearLines()
-		tt.tooltip:SetAction(id)
-		local name = getglobal("Quartz3TTTextLeft1"):GetText()
-		tt:Hide()
-		return name
-	end
-
 	local spellSlots = {}
 	function Quartz3.getSlot(spellId)
 		if not spellSlots[spellId] then
@@ -309,23 +295,10 @@ do
 		local spl = spellSlots[spellId]
 		if (spl.slot) then
 			if (not spl.slotCheckedSinceUpdate) then
-				if (spl.texture) then
-					if (not GetActionText(spl.slot)) then -- ignore any Player macros :-)
-						local thisTexture = GetActionTexture(spl.slot)
-						if (thisTexture == spl.texture) then
-							if (spl.problemTexture) then
-								if (getActionNameFromTooltip(spl.slot) == spl.name) then
-									spl.slotCheckedSinceUpdate = true
-									return spl.slot
-								end
-							else
-								spl.slotCheckedSinceUpdate = true
-								return spl.slot
-							end
-						end
-					end
-				else
-					if (getActionNameFromTooltip(spl.slot) == spl.name) then
+				local name, actionType, id = GetActionText(spl.slot);
+				if actionType and actionType == "SPELL" and id then 
+					local name,rank,texture = SpellInfo(id)	
+					if (name and name == spl.name) then
 						spl.slotCheckedSinceUpdate = true
 						return spl.slot
 					end
@@ -339,36 +312,27 @@ do
 		spl.slot = nil
 	
 		for slot = 1, 120 do
-			local thisTexture = GetActionTexture(slot)
-			if (thisTexture) then
-				if (spl.texture) then
-					if (not GetActionText(slot)) then -- ignore any Player macros :-)
-						if (thisTexture == spl.texture) then
-							if (spl.problemTexture) then
-								if (getActionNameFromTooltip(slot) == spl.name) then
-									spl.slot = slot
-									break
-								end
-							else
-								spl.slot = slot
-								break
-							end
-						end
-					end
-				else
-					if (getActionNameFromTooltip(slot) == spl.name) then
+			local name, actionType, id = GetActionText(slot);
+			if actionType and actionType == "SPELL" and id then
+				local name,rank,texture = SpellInfo(id)
+				if (name and name == spl.name) then
 						spl.slot = slot
 						break
 					end
 				end
 			end
-		end
 	
 		if (not spl.slot) then
-			
 			return nil
 		end
-		spellSlots[spellId].slot = spl.slot
+		spl.slotCheckedSinceUpdate = true
 		return spl.slot
 	end
+
+	function Quartz3:DeCacheActionSlotIds()
+		for _, v in pairs(spellSlots) do
+			v.slotCheckedSinceUpdate = false
+		end
+	end
+
 end

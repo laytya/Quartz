@@ -181,7 +181,7 @@ do
 	end
 	
 	function mirrorOnEvent()
-		printT({event, arg1})
+
 		if ( event == "PLAYER_ENTERING_WORLD" ) then
 			if showmirror and showmirror[arg1] then showmirror[arg1] = nil end
 		end

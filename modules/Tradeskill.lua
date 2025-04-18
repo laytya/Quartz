@@ -98,7 +98,7 @@ function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
 		return self.hooks[object].UNIT_SPELLCAST_START(object, event, unit, spell)
 	end
 	local spellName, _, icon = SpellInfo(spell.id)
-	printT(SpellInfo(spell.id))
+
 	local displayName = spellName
 	if true then --or isTradeskill print
 		repeattimes = repeattimes or 1

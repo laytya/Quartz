@@ -49,7 +49,8 @@ do
 			if not castBar:IsVisible() or Player.Bar.fadeOut then
 				return f:SetScript("OnUpdate", nil)
 			end
-			if IsActionInRange(spell) == 0 then
+			local _, tGuid = UnitExists("target")
+			if target == tGuid  and IsActionInRange(spell) == 0 then
 				r, g, b = castBar:GetStatusBarColor()
 				modified = true
 				castBar:SetStatusBarColor(unpack(db.rangecolor))
@@ -73,6 +74,8 @@ end
 
 function Range:OnEnable()
 	self:RegisterEvent("UNIT_CASTEVENT")
+	self:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
+	
 end
 
 function Range:ApplySettings()
@@ -98,6 +101,10 @@ function Range:UNIT_CASTEVENT()
 			f:SetScript("OnUpdate", OnUpdate)
 		end
 	end
+end
+
+function Range:ACTIONBAR_SLOT_CHANGED()
+	Quartz3:DeCacheActionSlotIds()
 end
 
 do

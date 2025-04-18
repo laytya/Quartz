@@ -403,10 +403,10 @@ end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_UPDATE = CastBarTemplate.UNIT_SPELLCAST_DELAYED
 
 function CastBarTemplate:SPELLCAST_START(s,d)
-	printT({event,s,d})
+	--printT({event,s,d})
 end
 function CastBarTemplate:SPELLCAST_CHANNEL_START(s,d)
-	printT({event,s,d})
+	--printT({event,s,d})
 end
 function CastBarTemplate:SPELLCAST_CHANNEL_STOP(s,d)
 	self:UNIT_SPELLCAST_STOP(event, "player")

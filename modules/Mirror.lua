@@ -46,6 +46,7 @@ local getn, format = table.getn, string.format
 
 local gametimebase, gametimetostart
 local lfgshowbase, readycheckshowbase, readycheckshowduration
+local showmirror = {}
 local locked = true
 
 local db, getOptions
@@ -162,14 +163,41 @@ Mirror.ExternalTimers = setmetatable({}, {__index = function(t,k)
 	]]
 end})
 
-local mirrorOnUpdate, fakeOnUpdate
+local mirrorOnUpdate, fakeOnUpdate, mirrorOnEvent
 do
 	function mirrorOnUpdate()
-		local frame = this
-		local progress = GetMirrorTimerProgress(frame.mode) / 1000
-		progress = progress > frame.duration and frame.duration or progress
-		frame:SetValue(progress)
-		frame.TimeText:SetText(format(TimeFmt(progress)))
+		if ( this.paused ) then
+			return;
+		end
+		local timer = showmirror[this.mode]
+		if timer then
+			timer.value = timer.value + timer.scale * arg1
+			if timer.value > timer.maxValue then timer.value = timer.maxValue end
+			this:SetValue(timer.value)
+			this.TimeText:SetText(format(TimeFmt(timer.value)))
+		else
+			this:Hide()
+		end
+	end
+	
+	function mirrorOnEvent()
+		printT({event, arg1})
+		if ( event == "PLAYER_ENTERING_WORLD" ) then
+			if showmirror and showmirror[arg1] then showmirror[arg1] = nil end
+		end
+		if ( event == "MIRROR_TIMER_PAUSE"  and showmirror) then
+			for m, v in pairs(showmirror) do
+				if ( arg1 > 0 ) then
+					showmirror[m].paused = 1;
+				else
+					showmirror[m].paused = nil;
+				end
+			end
+			return;
+		end
+		if ( event == "MIRROR_TIMER_STOP" ) then
+			if showmirror and  showmirror[arg1] then showmirror[arg1] = nil end
+		end
 	end
 
 	function fakeOnUpdate()
@@ -228,16 +256,16 @@ function Mirror:OnInitialize()
 end
 
 function Mirror:OnEnable()
-	self:RegisterEvent("MIRROR_TIMER_PAUSE")
 	self:RegisterEvent("MIRROR_TIMER_START")
-	self:RegisterEvent("MIRROR_TIMER_STOP")
+	self:RegisterEvent("MIRROR_TIMER_PAUSE", mirrorOnEvent);
+	self:RegisterEvent("MIRROR_TIMER_STOP", mirrorOnEvent);
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", mirrorOnEvent);
 	self:RegisterEvent("PLAYER_UNGHOST", "UpdateBars")
 	self:RegisterEvent("PLAYER_ALIVE", "UpdateBars")
 	self:RegisterMessage("Quartz3Mirror_UpdateCustom", "UpdateBars")
 	self:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
 	self:RegisterEvent("LFG_PROPOSAL_SHOW")
 	self:RegisterEvent("READY_CHECK")
-	self:RegisterEvent("READY_CHECK_FINISHED")
 	self:RegisterEvent("LFG_PROPOSAL_FAILED", "LFG_PROPOSAL_End")
 	self:RegisterEvent("LFG_PROPOSAL_SUCCEEDED", "LFG_PROPOSAL_End")
 	self:SecureHook("StaticPopup_Show", "UpdateBars")
@@ -319,14 +347,11 @@ do
 			else
 				local duration = v.duration
 				bar:SetMinMaxValues(0, duration)
-				bar.duration = duration
 				bar:Show()
 				bar:SetScript("OnUpdate", mirrorOnUpdate)
 				bar:SetStatusBarColor(unpack(db[v.mode]))
---				this:RegisterEvent("MIRROR_TIMER_PAUSE");
---				this:RegisterEvent("MIRROR_TIMER_STOP");
---				this:RegisterEvent("PLAYER_ENTERING_WORLD");
-	this.timer = nil;
+				
+				--this.timer = nil;
 			end
 		end
 		for i = maxindex+1, getn(mirrorbars) do
@@ -367,7 +392,7 @@ do
 				local which = "READYCHECK"
 				local endTime
 				if readycheckshowbase then
-					endTime = readycheckshowbase + readycheckshowduration
+					endTime = readycheckshowbase + (readycheckshowduration or 30)
 				else
 					endTime = lfgshowbase + timeoutoverrides[which]
 				end
@@ -388,22 +413,22 @@ do
 				end
 			end
 		end
---[[
-		if db.showmirror then
-			for i = 1, MIRRORTIMER_NUMTIMERS do
-				local timer, value, maxvalue, scale, paused, label = GetMirrorTimerInfo(i)
-				if timer ~= "UNKNOWN" then
+
+		if db.showmirror and showmirror then
+			for m, v in pairs(showmirror) do
+				if m ~= "UNKNOWN" then
 					local t = new()
 					tmp[getn(tmp)+1] = t
-					t.name = label
-					t.texture = icons[timer]
-					t.mode = timer
-					t.duration = maxvalue / 1000
+					t.name = v.label
+					t.texture = icons[m]
+					t.mode = m
+					t.duration = v.maxValue
 					t.isfake = false
+					
 				end
 			end
 		end
-]]		
+		
 		if db.showstatic then
 			local recoverydelay = GetCorpseRecoveryDelay()
 			if recoverydelay > 0 and UnitHealth("player") < 2 then
@@ -486,43 +511,12 @@ do
 		end
 	end
 
-	function Mirror:MIRROR_TIMER_START(timer, value, maxValue, scale, paused, label)
-		if db.showmirror then
-			if timer ~= "UNKNOWN" then
-				local t = new()
-				tmp[getn(tmp)+1] = t
-				t.name = label
-				t.texture = icons[timer]
-				t.mode = timer
-				t.duration = maxvalue / 1000
-				t.isfake = false
-				if ( paused > 0 ) then 
-					t.paused = 1
-				else 
-					t.paused = nil 
-				end
-			end
-
-		end
-		
-		updateTimers()
-	end
-
-	function Mirror:MIRROR_TIMER_PAUSE(timer, paused)
-		printT(timer, paused)
-		for k, v in pairs(tmp) do
-			if v.mode == timer then
-				if ( paused > 0 ) then
-					v.paused = 1
-				else
-					v.paused = nil
-				end	
-		end
-		end
-		
-	end
+	function Mirror:MIRROR_TIMER_START()
+		local timer, value, maxValue, scale, paused, label = arg1, arg2, arg3, arg4, arg5, arg6
+		printT({"MIRROR_TIMER_START"}, timer, value, maxValue, scale, paused, label)
 	
-	function Mirror:MIRROR_TIMER_STOP()
+		showmirror[timer] = { value = value / 1000, maxValue = maxValue / 1000, scale = scale, paused = paused, label = label}
+		update()
 	end
 
 
@@ -551,13 +545,10 @@ function Mirror:LFG_PROPOSAL_End(event, msg)
 end
 function Mirror:READY_CHECK(event, msg, duration)
 	readycheckshowbase = GetTime()
-	readycheckshowduration = duration
+	readycheckshowduration = 30
 	self:UpdateBars()
 end
-function Mirror:READY_CHECK_FINISHED(event, msg)
-	readycheckshowbase = nil
-	self:UpdateBars()
-end
+
 do
 	local function apply(i, bar, db, direction)
 		local position, showicons, iconside, gap, spacing, offset

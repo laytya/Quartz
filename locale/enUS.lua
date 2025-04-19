@@ -261,6 +261,7 @@ L["Show Icons"] = true
 L["Show icons on buffs and debuffs for your %s"] = true
 L["Show icons on mirror bars"] = true
 L["Show if Target"] = true
+L["Show Minimap Icon"] = true
 L["Show Mirror"] = true
 L["Show mirror bars such as breath and feign death"] = true
 L["Show PvP"] = true

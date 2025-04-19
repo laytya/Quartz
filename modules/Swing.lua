@@ -378,8 +378,8 @@ function Swing:COMBAT_MSG()
 		-- Only the upcoming swing gets parry haste benefit
 		if (isDualWield()) then
 			if timer[OFFHAND] < timer[MAINHAND] then
-				local minimum = GetWeaponSpeed(OFFHAND) * 0.20
-				local reduct = GetWeaponSpeed(OFFHAND) * 0.40
+				local minimum = getWeaponSpeed(OFFHAND) * 0.20
+				local reduct = getWeaponSpeed(OFFHAND) * 0.40
 				timer[OFFHAND] = timer[OFFHAND] - reduct
 				if timer[OFFHAND] < minimum then
 					timer[MAINHAND] = minimum
@@ -388,9 +388,9 @@ function Swing:COMBAT_MSG()
 	end
 end
 
-		local minimum = GetWeaponSpeed(MAINHAND) * 0.20
+		local minimum = getWeaponSpeed(MAINHAND) * 0.20
 		if (timer[MAINHAND] > minimum) then
-			local reduct = GetWeaponSpeed(MAINHAND) * 0.40
+			local reduct = getWeaponSpeed(MAINHAND) * 0.40
 			local newTimer = timer[MAINHAND] - reduct
 			if (newTimer < minimum) then
 				timer[MAINHAND] = minimum
@@ -607,6 +607,7 @@ do
 					Quartz3:SetModuleEnabled(MODNAME, v)
 				end,
 				order = 100,
+				width = "full",
 			},
 			barcolor = {
 				type = "color",
@@ -678,7 +679,7 @@ do
 					locked = v
 				end,
 				hidden = function()
-					return db.swingposition ~= "free"
+					return  false --db.swingposition ~= "free"
 				end,
 				order = 107,
 			},

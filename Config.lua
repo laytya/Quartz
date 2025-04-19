@@ -191,6 +191,28 @@ local function getOptions()
 		for k,v in pairs(moduleOptions) do
 			options.args[k] = (type(v) == "function") and v() or v
 		end
+
+		if (ldbIcon) then
+			
+			options.args.general.args.ldbIcon = {
+				type = "toggle",
+				order = 80,
+				width = "normal",
+				name = L["Show Minimap Icon"],
+				desc = L["Show Minimap Icon"],
+				get = function() return not Quartz3.db.profile.ldbIcon.hide end,
+				set = function(info, value)
+					value = not value
+					Quartz3.db.profile.ldbIcon.hide = value
+					if (value) then
+						ldbIcon:Hide("Quartz3")
+					else
+						ldbIcon:Show("Quartz3")
+					end
+				end,
+			}
+		end
+
 	end
 	return options
 end
@@ -206,15 +228,14 @@ end
 
 function Quartz3:SetupOptions()
 	self.optFrames = {}
-	self.options = getOptions()
 	--LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("Quartz3", getOptions)
-	LibStub('AceConfig-3.0').RegisterOptionsTable(self, "Quartz3", self.options)
+	LibStub('AceConfig-3.0').RegisterOptionsTable(self, "Quartz3", getOptions)
 	self.optFrames.Quartz3 = ACD3:AddToBlizOptions("Quartz3", "Quartz 3", nil, "general")
 	self:RegisterModuleOptions("Profiles", LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db) , "Profiles")
 	self:RegisterChatCommand("quartz", "ChatCommand")
 	self:RegisterChatCommand("q3", "ChatCommand")
 
-	self:InitDBIcon()
+	Quartz3:InitDBIcon()
 end
 
 function Quartz3:RegisterModuleOptions(name, optTable, displayName)
@@ -258,24 +279,6 @@ function Quartz3:InitDBIcon()
 				Quartz3.db.profile.ldbIcon = {}
 			end
 			ldbIcon:Register("Quartz3", ldbQuartz3, Quartz3.db.profile.ldbIcon)
-
-			self.options.args.general.args.ldbIcon = {
-				type = "toggle",
-				order = 80,
-				width = "normal",
-				name = L["Show Minimap Icon"],
-				desc = L["Show Minimap Icon"],
-				get = function() return not Quartz3.db.profile.ldbIcon.hide end,
-				set = function(info, value)
-					value = not value
-					Quartz3.db.profile.ldbIcon.hide = value
-					if (value) then
-						ldbIcon:Hide("Quartz3")
-					else
-						ldbIcon:Show("Quartz3")
-					end
-				end,
-			}
 		end
 	end
 end

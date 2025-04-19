@@ -21,6 +21,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
 local media = LibStub("LibSharedMedia-3.0")
 local AceCore = LibStub("AceCore-3.0")
 local ACD3 = LibStub("AceConfigDialog-3.0")
+local LDB = LibStub("LibDataBroker-1.1", true)
+local ldbIcon = LibStub("LibDBIcon-1.0", true)
 local trim = AceCore.strtrim
 ----------------------------
 -- Upvalues
@@ -204,15 +206,76 @@ end
 
 function Quartz3:SetupOptions()
 	self.optFrames = {}
+	self.options = getOptions()
 	--LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("Quartz3", getOptions)
-	LibStub('AceConfig-3.0').RegisterOptionsTable(self, "Quartz3", getOptions)
+	LibStub('AceConfig-3.0').RegisterOptionsTable(self, "Quartz3", self.options)
 	self.optFrames.Quartz3 = ACD3:AddToBlizOptions("Quartz3", "Quartz 3", nil, "general")
 	self:RegisterModuleOptions("Profiles", LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db) , "Profiles")
 	self:RegisterChatCommand("quartz", "ChatCommand")
 	self:RegisterChatCommand("q3", "ChatCommand")
+
+	self:InitDBIcon()
 end
 
 function Quartz3:RegisterModuleOptions(name, optTable, displayName)
 	moduleOptions[name] = optTable
 	self.optFrames[name] = ACD3:AddToBlizOptions("Quartz3", displayName or name, "Quartz3", name)
+end
+
+local hintString = "|cffffffff%s:|r %s"
+local hintText = {
+	"Quartz3",
+	format(hintString, "Left-Click", L["Show/Hide Quartz3 options"]),
+	--format(hintString, "Right-Click", L["Config"]),
+
+}
+
+local function LDBOnClick(self, button)
+	Quartz3:ChatCommand()
+end
+
+function Quartz3:InitDBIcon()
+
+	if (LDB) then
+		local ldbQuartz3 = LibStub("LibDataBroker-1.1"):NewDataObject("Quartz3", {
+			type = "launcher",
+			icon = "Interface\\Icons\\Spell_Frost_FrostBolt02",
+			tocname = "Quartz3",
+			label = "Quartz3",
+			OnClick = LDBOnClick,
+			OnTooltipShow = function(tooltip)
+				
+				if (tooltip and tooltip.AddLine) then
+					for _i, text in ipairs(hintText) do
+						tooltip:AddLine(text)
+					end
+				end
+			end,
+		})
+
+		if (ldbIcon) then
+			if (not Quartz3.db.profile.ldbIcon) then
+				Quartz3.db.profile.ldbIcon = {}
+			end
+			ldbIcon:Register("Quartz3", ldbQuartz3, Quartz3.db.profile.ldbIcon)
+
+			self.options.args.general.args.ldbIcon = {
+				type = "toggle",
+				order = 80,
+				width = "normal",
+				name = L["Show Minimap Icon"],
+				desc = L["Show Minimap Icon"],
+				get = function() return not Quartz3.db.profile.ldbIcon.hide end,
+				set = function(info, value)
+					value = not value
+					Quartz3.db.profile.ldbIcon.hide = value
+					if (value) then
+						ldbIcon:Hide("Quartz3")
+					else
+						ldbIcon:Show("Quartz3")
+					end
+				end,
+			}
+		end
+	end
 end

@@ -4,7 +4,7 @@
 -- @release $Id: AceConfigDialog-3.0.lua 1139 2016-07-03 07:43:51Z nevcairiel $
 
 local LibStub = LibStub
-local MAJOR, MINOR = "AceConfigDialog-3.0", 66
+local MAJOR, MINOR = "AceConfigDialog-3.0", 70
 local AceConfigDialog, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConfigDialog then return end
@@ -1928,6 +1928,7 @@ end
 -- @return The reference to the frame registered into the Interface Options.
 function AceConfigDialog:AddToBlizOptions(appName, name, parent, ...)
 	local BlizOptions = AceConfigDialog.BlizOptions
+	if not BlizOptions.tree then BlizOptions.tree = {} end
 
 	local key = appName
 	local l = tgetn(arg)
@@ -1962,99 +1963,99 @@ function AceConfigDialog:AddToBlizOptions(appName, name, parent, ...)
 	end
 end
 
-do
-	local tree = {}
-	function InterfaceOptions_AddCategory(widget, addon, position)
-		local parent = widget.frame.parent;
-		local appName = widget:GetUserData("appName")
-		if (parent) then
-			for k, v in pairs(tree) do
-				if (v.value == parent) then
-					if not v.children then
-						v.children = {}
-					end
-					tinsert(v.children, { value = widget.frame.name, text = widget.frame.name, frame = widget });
-					return;
+
+function InterfaceOptions_AddCategory(widget, addon, position)
+	local parent = widget.frame.parent;
+	local appName = widget:GetUserData("appName")
+	local tree = AceConfigDialog.BlizOptions.tree
+	if (parent) then
+		for k, v in pairs(tree) do
+			if (v.value == parent) then
+				if not v.children then
+					v.children = {}
 				end
+				tinsert(v.children, { value = widget.frame.name, text = widget.frame.name, frame = widget });
+				return;
 			end
-		end
-
-		if (position) then
-			tinsert(tree, position, { value = appName, text = widget.frame.name, frame = widget });
-		else
-			tinsert(tree, { value = appName, text = widget.frame.name, frame = widget });
 		end
 	end
 
-	local function SelectTreeGroup(container, event, count, group)
-		container:ReleaseChildren()
-		local bg = gui:Create("BlizOptionsGroup")
-
-
-		bg:SetCallback("OnShow", FeedToBlizPanel)
-		bg:SetCallback("OnHide", ClearBlizPanel)
-		local path = {}
-		BuildPath(path, strsplit("\001", group))
-		local node
-		local app = tremove(path, 1)
-		for k, v in pairs(container.tree) do
-			if v.value == app then
-				if table.getn(path) < 1 then
-					node = v
-				else
-					for j, w in pairs(v.children) do
-
-						if w.value == path[1] then
-							node = w
-							break;
-						end
-					end
-				end
-				break;
-			end
-		end
-		bg:SetName(node.value, app)
-		bg:SetTitle(node.frame.label:GetText())
-		bg:SetUserData("appName", app)
-		bg:SetUserData("path", node.frame:GetUserData("path"))
-		bg.width = "fill"
-		bg.height = "fill"
-		container:AddChild(bg)
+	if (position) then
+		tinsert(tree, position, { value = appName, text = widget.frame.name, frame = widget });
+	else
+		tinsert(tree, { value = appName, text = widget.frame.name, frame = widget });
 	end
-
-	_G["AddonConfigFrame"] = _G["AddonConfigFrame"] or nil
-	local frame
-	function InterfaceOptionsFrame_OpenToCategory(...)
-		-- Create the frame container
-		frame = _G["AddonConfigFrame"] or gui:Create("Frame")
-		_G["AddonConfigFrame"] = frame
-		if frame:IsShown() then
-			frame:ReleaseChildren()
-		end
-		frame:SetTitle("Addon's Configuration")
-		frame:SetStatusText("Addons configuration panel")
-		frame:SetCallback("OnClose", function(widget) gui:Release(widget); _G["AddonConfigFrame"] = nil end)
-		frame:SetLayout("Flow")
-		frame:SetWidth(850)
-		-- Create the TreeGroup
-		local tg = gui:Create("TreeGroup")
-		tg:SetLayout("Flow")
-		tg:SetTree(tree)
-		--tg:SetWidth(320)
-		tg.width = "fill"
-		tg.height = "fill"
-		tg:SetCallback("OnGroupSelected", SelectTreeGroup)
-		frame:AddChild(tg)
-		local l = tgetn(arg)
-		local path = new()
-
-		if l > 0 then
-			for n = 1, l do
-				tinsert(path, arg[n])
-			end
-			tg:SelectByPath(unpack(path))
-		end
-		del(path)
-	end
-
 end
+
+local function SelectTreeGroup(container, event, count, group)
+	container:ReleaseChildren()
+	local bg = gui:Create("BlizOptionsGroup")
+
+
+	bg:SetCallback("OnShow", FeedToBlizPanel)
+	bg:SetCallback("OnHide", ClearBlizPanel)
+	local path = {}
+	BuildPath(path, strsplit("\001", group))
+	local node
+	local app = tremove(path, 1)
+	for k, v in pairs(container.tree) do
+		if v.value == app then
+			if table.getn(path) < 1 then
+				node = v
+			else
+				for j, w in pairs(v.children) do
+
+					if w.value == path[1] then
+						node = w
+						break;
+					end
+				end
+			end
+			break;
+		end
+	end
+	bg:SetName(node.value, app)
+	bg:SetTitle(node.frame.label:GetText())
+	bg:SetUserData("appName", app)
+	bg:SetUserData("path", node.frame:GetUserData("path"))
+	bg.width = "fill"
+	bg.height = "fill"
+	container:AddChild(bg)
+end
+
+_G["AddonConfigFrame"] = _G["AddonConfigFrame"] or nil
+local frame
+function InterfaceOptionsFrame_OpenToCategory(...)
+	local tree = AceConfigDialog.BlizOptions.tree
+	-- Create the frame container
+	frame = _G["AddonConfigFrame"] or gui:Create("Frame")
+	_G["AddonConfigFrame"] = frame
+	if frame:IsShown() then
+		frame:ReleaseChildren()
+	end
+	frame:SetTitle("Addon's Configuration")
+	frame:SetStatusText("Addons configuration panel")
+	frame:SetCallback("OnClose", function(widget) gui:Release(widget); _G["AddonConfigFrame"] = nil end)
+	frame:SetLayout("Flow")
+	frame:SetWidth(850)
+	-- Create the TreeGroup
+	local tg = gui:Create("TreeGroup")
+	tg:SetLayout("Flow")
+	tg:SetTree(tree)
+	--tg:SetWidth(320)
+	tg.width = "fill"
+	tg.height = "fill"
+	tg:SetCallback("OnGroupSelected", SelectTreeGroup)
+	frame:AddChild(tg)
+	local l = tgetn(arg)
+	local path = new()
+
+	if l > 0 then
+		for n = 1, l do
+			tinsert(path, arg[n])
+		end
+		tg:SelectByPath(unpack(path))
+	end
+	del(path)
+end
+

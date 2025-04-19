@@ -33,6 +33,8 @@ libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
 
 libs\AceLibrary\AceLibrary.lua
 libs\Gratuity-2.0\Gratuity-2.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
 locale\locale.xml
 

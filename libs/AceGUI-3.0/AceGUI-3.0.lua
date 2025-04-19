@@ -25,7 +25,7 @@
 -- @class file
 -- @name AceGUI-3.0
 -- @release $Id: AceGUI-3.0.lua 1102 2013-10-25 14:15:23Z nevcairiel $
-local ACEGUI_MAJOR, ACEGUI_MINOR = "AceGUI-3.0", 34
+local ACEGUI_MAJOR, ACEGUI_MINOR = "AceGUI-3.0", 35
 local AceGUI, oldminor = LibStub:NewLibrary(ACEGUI_MAJOR, ACEGUI_MINOR)
 
 if not AceGUI then return end -- No upgrade needed
@@ -430,23 +430,8 @@ do
 		self:DoLayout()
 	end
 
-	do
-	local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
 	WidgetContainerBase.AddChildren = function(self,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-		args[1] = a1
-		args[2] = a2
-		args[3] = a3
-		args[4] = a4
-		args[5] = a5
-		args[6] = a6
-		args[7] = a7
-		args[8] = a8
-		args[9] = a9
-		args[10] = a10
-		for i = 1,10 do
-			local child = args[i]
-			arg[i] = nil
-
+		for _, child in ipairs({a1, a2, a3, a4, a5, a6, a7, a8, a9, a10}) do
 			if not child then break end
 			tinsert(self.children, child)
 			child:SetParent(self)
@@ -454,7 +439,6 @@ do
 		end
 		self:DoLayout()
 	end
-	end -- WidgetContainerBase.AddChildren
 
 	WidgetContainerBase.ReleaseChildren = function(self)
 		local children = self.children

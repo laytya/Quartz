@@ -273,6 +273,7 @@ L["Show the Shield Icon on non-interruptible Cast Bars"] = true
 L["Show this castbar for friendly units"] = true
 L["Show this castbar for hostile units"] = true
 L["Show this castbar if focus is also target"] = true
+L["Show/Hide Quartz3 options"] = true
 L["Snap to Center"] = true
 L["Sorry for the inconvenience, and thanks for using Quartz!"] = true
 L["Sort by Remaining Time"] = true

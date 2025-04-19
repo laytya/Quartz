@@ -21,7 +21,7 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 ]]
 do
 	local Type = "Window"
-	local Version = 4
+	local Version = 5
 
 	local function frameOnClose()
 		this.obj:Fire("OnClose")
@@ -199,14 +199,14 @@ do
 		topleft:SetTexture([[Interface\PaperDollInfoFrame\UI-GearManager-Border]])
 		topleft:SetWidth(64)
 		topleft:SetHeight(64)
-		topleft:SetPoint("TOPLEFT")
+		topleft:SetPoint("TOPLEFT", 0, 0)
 		topleft:SetTexCoord(0.501953125, 0.625, 0, 1)
 		
 		local topright = frame:CreateTexture(nil, "BORDER")
 		topright:SetTexture([[Interface\PaperDollInfoFrame\UI-GearManager-Border]])
 		topright:SetWidth(64)
 		topright:SetHeight(64)
-		topright:SetPoint("TOPRIGHT")
+		topright:SetPoint("TOPRIGHT", 0, 0)
 		topright:SetTexCoord(0.625, 0.75, 0, 1)
 		
 		local top = frame:CreateTexture(nil, "BORDER")
@@ -220,14 +220,14 @@ do
 		bottomleft:SetTexture([[Interface\PaperDollInfoFrame\UI-GearManager-Border]])
 		bottomleft:SetWidth(64)
 		bottomleft:SetHeight(64)
-		bottomleft:SetPoint("BOTTOMLEFT")
+		bottomleft:SetPoint("BOTTOMLEFT", 0, 0)
 		bottomleft:SetTexCoord(0.751953125, 0.875, 0, 1)
 		
 		local bottomright = frame:CreateTexture(nil, "BORDER")
 		bottomright:SetTexture([[Interface\PaperDollInfoFrame\UI-GearManager-Border]])
 		bottomright:SetWidth(64)
 		bottomright:SetHeight(64)
-		bottomright:SetPoint("BOTTOMRIGHT")
+		bottomright:SetPoint("BOTTOMRIGHT", 0, 0)
 		bottomright:SetTexCoord(0.875, 1, 0, 1)
 		
 		local bottom = frame:CreateTexture(nil, "BORDER")

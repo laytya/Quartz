@@ -76,6 +76,9 @@ function Latency:OnEnable()
 	self:SecureHook("CastSpellByName")
 	self:SecureHook("CastSpell")
 	self:SecureHook("UseAction")
+	self:SecureHook("UseContainerItem")
+	self:SecureHook("UseInventoryItem")
+	self:SecureHook("DoTradeSkill")
 
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)
 		if mtype == "statusbar" then
@@ -109,6 +112,17 @@ function Latency:UseAction(pass, cursor, onSelf)
 	sendTime = GetTime()	
 end
 
+function Latency:UseContainerItem(id, index)
+	sendTime = GetTime()
+end
+
+function Latency:UseInventoryItem(id, index)
+	sendTime = GetTime()
+end
+
+function Latency:DoTradeSkill(id, index)
+	sendTime = GetTime()
+end
 
 function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 	self.hooks[object].UNIT_SPELLCAST_START(object, bar, unit, spell)

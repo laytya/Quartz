@@ -28,6 +28,7 @@ local Mirror = Quartz3:GetModule("Mirror")
 local GetTime = GetTime
 local unpack, pairs, ipairs, tonumber = unpack, pairs, ipairs, tonumber
 local table_remove = table.remove
+local getn, format, strfind = table.getn, string.format, string.find
 
 local external = Mirror.ExternalTimers
 local thistimers = {}
@@ -36,8 +37,8 @@ local getOptions
 
 function Timer:ChatHandler(msg)
 	if self:IsEnabled() then
-		if msg:match("^kill") then
-			local name = msg:match("^kill (.+)$")
+		local pos,_,name = strfind(msg, "^kill (.+)$")
+		if pos then
 			if name then
 				external[name] = nil
 				for k, v in ipairs(thistimers) do
@@ -51,16 +52,18 @@ function Timer:ChatHandler(msg)
 				return Quartz3:Print(L["Usage: /quartztimer timername 60 or /quartztimer kill timername"])
 			end
 		else
-		local duration = tonumber(msg:match("^(%d+)"))
+		local pos,_,duration = strfind(msg, "^(%d+)")
+		duration = tonumber(duration)
 		local name
 		if duration then
-			name = msg:match("^%d+ (.+)$")
+			pos, _, name = strfind(msg, "^%d+ (.+)$")
 		else
-			duration = tonumber(msg:match("(%d+)$"))
+			pos,_,duration = strfind(msg, "(%d+)$")
+			duration = tonumber(duration)
 			if not duration then
 				return Quartz3:Print(L["Usage: /quartztimer timername 60 or /quartztimer 60 timername"])
 			end
-			name = msg:match("^(.+) %d+$")
+			pos, _, name = strfind(msg, "^(.+) %d+$")
 		end
 		if not name then
 			return Quartz3:Print(L["Usage: /quartztimer timername 60 or /quartztimer kill timername"])
@@ -75,7 +78,7 @@ function Timer:ChatHandler(msg)
 				break
 				end
 			end
-			thistimers[#thistimers+1] = name
+			thistimers[getn(thistimers)+1] = name
 			self:SendMessage("Quartz3Mirror_UpdateCustom")
 		end
 	end
@@ -166,7 +169,7 @@ do
 									break
 								end
 							end
-							thistimers[#thistimers+1] = newname
+							thistimers[getn(thistimers)+1] = newname
 							Timer:SendMessage("Quartz3Mirror_UpdateCustom")
 							newname = nil
 							newlength = nil
@@ -188,15 +191,10 @@ do
 						get = function()
 							return ""
 						end,
-						set = function(info, name)
-							if name then
-								external[name] = nil
-								for k, v in ipairs(thistimers) do
-									if v == name then
+						set = function(info, v)
+							if v then
+								external[thistimers[v]] = nil
 										table_remove(thistimers, k)
-										break
-									end
-								end
 								Timer:SendMessage("Quartz3Mirror_UpdateCustom")
 							end
 						end,

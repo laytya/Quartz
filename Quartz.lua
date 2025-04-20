@@ -336,3 +336,18 @@ do
 	end
 
 end
+
+function Quartz3:GetUnitFromGuid(guid)
+	local _, unit	= UnitExists("player")
+	if unit == guid then
+		return "player"
+	end
+	_, unit = UnitExists("playerpet")
+	if unit == guid then
+		return "pet"
+	end
+	_, unit = UnitExists("target")
+	if unit == guid then
+		return "target"
+	end
+end

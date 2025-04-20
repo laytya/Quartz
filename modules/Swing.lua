@@ -51,11 +51,12 @@ local swingmode -- nil is none, 0 is meleeing, 1 is autoshooting
 local timer, duration = {}, {}
 local slamstart
 local MAINHAND, OFFHAND, RANGED = 1, 2, 3
-local rangeSlot = nil
+local rangeSlot,meleeSlot = nil, nil
 local db, getOptions
 local range_fader = 0
 local flurry_fresh = nil
 local flurry_count = -1
+local weapon,offhand,range
 
 local defaults = {
 	profile = {
@@ -76,9 +77,9 @@ local defaults = {
 
 local function getWeaponSpeed(slot)
 	local speedMH, speedOH = UnitAttackSpeed("player")
-	if slot == offHand then
+	if slot == OFFHAND then
 		return speedOH
-	elseif slot == ranged then
+	elseif slot == RANGED then
 		local rangedAttackSpeed = UnitRangedDamage("player")
 		return rangedAttackSpeed
 	else
@@ -87,11 +88,11 @@ local function getWeaponSpeed(slot)
 end
 
 local function isDualWield()
-	return (getWeaponSpeed(offHand) ~= nil)
+	return (getWeaponSpeed(OFFHAND) ~= nil)
 end
 
 local function hasRanged()
-	return (GetWeaponSpeed(ranged) ~= nil)
+	return (getWeaponSpeed(RANGED) ~= nil)
 end
 
 
@@ -149,10 +150,20 @@ end
 		[51575] = true, --["Carve"] = 1, -- twow
 
 	}
-
+	local rangeInstants = {
+		[3044] = true,
+		[13549] = true,
+	}
 	local function findRangeAction()
 		rangeSlot = nil
+		meleeSlot = nil
 		for  k,v in pairs(instants) do
+			meleeSlot = Quartz3.getSlot(k)
+			if meleeSlot then
+				break
+			end
+		end
+		for  k,v in pairs(rangeInstants) do
 			rangeSlot = Quartz3.getSlot(k)
 			if rangeSlot then
 				break
@@ -161,10 +172,15 @@ end
 	end
 
 
-local function inRange()
+local function inRange(dist)
 	-- if the slot is nil anyway then there's no sense being red all the time
+		--printT(rangeSlot)
+		if dist == RANGED then
+			return rangeSlot == nil or IsActionInRange(rangeSlot) == 1
+		else
+			return meleeSlot == nil or IsActionInRange(meleeSlot) == 1
+		end
 
-		return rangeSlot == nil or IsActionInRange(rangeSlot) == 1
 	
 end
 
@@ -203,7 +219,7 @@ local function OnUpdate()
 				this.swingstatusbar:SetStatusBarColor(unpack(db.outrangecolor))
 			end
 		else
-			if CheckInteractDistance("target",4) then
+			if inRange(RANGED) then --CheckInteractDistance("target",4) then
 				this.swingstatusbar:SetStatusBarColor(unpack(db.barcolor))
 		else
 				this.swingstatusbar:SetStatusBarColor(unpack(db.outrangecolor))
@@ -229,9 +245,6 @@ function Swing:OnInitialize()
 	
 	self:SetEnabledState(Quartz3:GetModuleEnabled(MODNAME))
 	Quartz3:RegisterModuleOptions(MODNAME, getOptions, L["Swing"])
-
-	
-
 end
 
 function Swing:OnEnable()
@@ -270,6 +283,7 @@ function Swing:OnEnable()
 		end
 	end
 	self:ApplySettings()
+	self:UpdateWeapon()
 
 	resetspells = {
 		[SpellInfo(845)] = true, -- Cleave
@@ -307,13 +321,11 @@ function Swing:ACTIONBAR_SLOT_CHANGED()
 	findRangeAction()
 end
 
-function Swing:UNIT_INVENTORY_CHANGED()
-end
-
 function Swing:UNIT_CASTEVENT()
 	if arg1 ~= playerGuid then return end
 
 	local spell = SpellInfo(arg4)
+
 	if spell == "Flurry" then
 		if flurry_count < 1 then -- track a completely fresh flurry for timing
 			flurry_fresh = true
@@ -348,7 +360,7 @@ end
 end
 		flurry_count = flurry_count - 1 -- swing occured, reduce flurry counter
 		return
-	elseif arg3 == "CAST" and arg4 == 5019 then
+	elseif arg3 == "CAST" and (arg4 == 5019 or arg4==75) then
 	-- wand shoot
 		ResetTimer(RANGED)
 		return
@@ -400,6 +412,46 @@ end
 		end
 	end
 end
+
+function Swing:UpdateWeapon()
+	weapon = GetInventoryItemLink("player", GetInventorySlotInfo("MainHandSlot"))
+	if (isDualWield()) then
+		offhand = GetInventoryItemLink("player", GetInventorySlotInfo("SecondaryHandSlot"))
+	else
+		swingbar[OFFHAND]:Hide()
+	end
+	if hasRanged() then
+		range = GetInventoryItemLink("player", GetInventorySlotInfo("RangedSlot"))
+	else
+		swingbar[RANGED]:Hide()
+	end
+end
+
+function Swing:UNIT_INVENTORY_CHANGED()
+	if (arg1 == "player") then
+		local oldWep = weapon
+		local oldOff = offhand
+		local oldRange = range
+
+		self:UpdateWeapon()
+		if (combat and oldWep ~= weapon) then
+			ResetTimer(MAINHAND)
+		end
+
+		if offhand then
+			-- don't forget OH timer just because you put on a shield, you might still care, especially for macros
+			local _,_,itemId = string.find(offhand,"item:(%d+)")
+			local _name,_link,_,_lvl,wep_type,_subtype,_ = GetItemInfo(itemId)
+			if (combat and isDualWield() and ((oldOff ~= offhand) and (wep_type and wep_type == "Weapon"))) then
+				ResetTimer(OFFHAND)
+			end
+		end
+		if (combat and oldRange ~= range) then
+			ResetTimer(RANGED)
+		end
+	end
+end
+
 --[[
 function Swing:START_AUTOREPEAT_SPELL()
 	swingmode = 1

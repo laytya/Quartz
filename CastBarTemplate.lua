@@ -192,28 +192,14 @@ CastBarTemplate.ToggleCastNotInterruptible = ToggleCastNotInterruptible
 ----------------------------
 -- Event Handlers
 
-
-local function getUnitFromGuid(guid)
-	local _, unit	= UnitExists("player")
-	if unit == guid then
-		return "player"
-	end
-	_, unit = UnitExists("playerpet")
-	if unit == guid then
-		return "pet"
-	end
-	_, unit = UnitExists("target")
-	if unit == guid then
-		return "target"
-	end
-end
-
-
 function CastBarTemplate:UNIT_CASTEVENT()
 
 	local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
   
-	local unit, event = getUnitFromGuid(caster)
+	local unit, event = Quartz3:GetUnitFromGuid(caster)
+	if unit == "player" then
+		--print(caster, target, eventType, spellId, start, duration)
+	end
 	if eventType == "START" then
 		event = "UNIT_SPELLCAST_START"
 		self:UNIT_SPELLCAST_SENT(eventType, unit, spellId, nil, target)
@@ -340,9 +326,9 @@ function CastBarTemplate:UNIT_SPELLCAST_INTERRUPTED(event, unit)
 	end
 	self.casting, self.channeling = nil, nil
 	self.fadeOut = true
-	if not self.stopTime then
+	--if not self.stopTime then
 		self.stopTime = GetTime()
-	end
+	--end
 	self.Bar:SetValue(1.0)
 	self.Bar:SetStatusBarColor(unpack(Quartz3.db.profile.failcolor))
 
@@ -409,7 +395,8 @@ function CastBarTemplate:SPELLCAST_CHANNEL_START(s,d)
 	--printT({event,s,d})
 end
 function CastBarTemplate:SPELLCAST_CHANNEL_STOP(s,d)
-	self:UNIT_SPELLCAST_STOP(event, "player")
+	--print("SPELLCAST_CHANNEL_STOP")
+	self:UNIT_SPELLCAST_STOP("UNIT_SPELLCAST_CHANNEL_STOP", "player")
 end
 
 

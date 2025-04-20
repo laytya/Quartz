@@ -38,10 +38,17 @@ local castBar, castBarText, castBarTimeText, castBarIcon, castBarSpark, castBarP
 local repeattimes, castname, duration, totaltime, starttime, casting, bail
 local completedcasts = 0
 local restartdelay = 1
+local tradeSkill = nil
+local recast, waitRecast = 0, GetTime()
 
 local function tradeskillOnUpdate()
 	local currentTime = GetTime()
 	if casting then
+		if (repeattimes > 1 ) and (currentTime - (waitRecast + duration)) > 0.5 then
+			bail =  true
+			casting  = false
+			tradeSkill = false
+		end
 		local elapsed = duration * completedcasts + currentTime - starttime
 		castBar:SetValue(elapsed)
 		
@@ -55,18 +62,23 @@ local function tradeskillOnUpdate()
 			castBarTimeText:SetText(format("%s / %s", format(TimeFmt(totaltime - elapsed)), format(TimeFmt(totaltime))))
 		end
 	else
-		if (starttime + duration + restartdelay < currentTime) or (completedcasts >= repeattimes) or bail or completedcasts == 0 then
+		if (starttime + duration + restartdelay < currentTime) or (completedcasts >= (repeattimes - 1) ) or bail or completedcasts == 0 then
 			Player.Bar.fadeOut = true
 			Player.Bar.stopTime = currentTime
+			Player.Bar.endTime = currentTime
 			castBar:SetValue(duration * repeattimes)
 			castBarTimeText:SetText("")
 			castBarSpark:Hide()
+			if bail then castBar:SetStatusBarColor(unpack(Quartz3.db.profile.failcolor)) end
 			castBarParent:SetScript("OnUpdate", Player.Bar.OnUpdate)
 			castBar:SetMinMaxValues(0, 1)
 		else
-			local elapsed = duration * completedcasts
+			local elapsed = duration * (completedcasts + 1)
 			castBar:SetValue(elapsed)
-			
+			if (repeattimes > 1 ) and (currentTime - (waitRecast + duration)) > 0.5 then
+				bail =  true
+				tradeSkill = false
+			end
 			castBarSpark:ClearAllPoints()
 			castBarSpark:SetPoint("CENTER", castBar, "LEFT", Player.db.profile.w, 0)
 			
@@ -87,10 +99,14 @@ end
 
 function Tradeskill:OnEnable()
 	self:RawHook(Player, "UNIT_SPELLCAST_START")
-	self:RegisterEvent("UNIT_SPELLCAST_STOP")
-	self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-	self:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+	self:RawHook(Player.Bar, "UNIT_SPELLCAST_STOP")
+	--self:RegisterEvent("SPELLCAST_STOP")
+	self:RegisterEvent("SPELLCAST_CHANNEL_STOP")
+	self:RegisterEvent("SPELLCAST_INTERRUPTED")
+	self:RegisterEvent("UPDATE_TRADESKILL_RECAST")
+	
 	self:Hook("DoTradeSkill", true)
+	--self:SecureHook("UIErrorsFrame_OnEvent")
 end
 
 function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
@@ -100,9 +116,18 @@ function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
 	local spellName, _, icon = SpellInfo(spell.id)
 
 	local displayName = spellName
-	if true then --or isTradeskill print
+	if tradeSkill then --or isTradeskill print
 		repeattimes = repeattimes or 1
-		duration = (spell.endTime - spell.startTime) / 1000
+		if repeattimes > 1 then
+			waitRecast = GetTime()
+			completedcasts = completedcasts + recast
+			recast = 0
+		end
+		if completedcasts == -1 then
+			completedcasts = 0 
+		end
+		
+		duration = (spell.endTime - spell.startTime)
 		totaltime = duration * (repeattimes or 1)
 		starttime = GetTime()
 		casting = true
@@ -133,31 +158,62 @@ function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
 	end
 end
 
-function Tradeskill:UNIT_SPELLCAST_STOP(event, unit)
+function Tradeskill:UNIT_SPELLCAST_STOP(object, event, unit)
 	if unit ~= "player" then
-		return
+		return self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit)
 	end
+	--print("Tradeskill:UNIT_SPELLCAST_STOP")
+	--self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit)
+	--print( casting , repeattimes , completedcasts )
+	if casting and repeattimes and completedcasts then
+		if  repeattimes - completedcasts < 2 then 
 	casting = false
-end
-
-function Tradeskill:UNIT_SPELLCAST_SUCCEEDED(event, unit, spell)
-	if unit ~= "player" then
-		return
-	end
-	if castname == spell then
-		completedcasts = completedcasts + 1
+			tradeSkill =  false
+			self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit)
+		end
+	else
+		self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit) 
 	end
 end
+--[[
+function Tradeskill:UIErrorsFrame_OnEvent(event, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+	--print("UIErrorsFrame_OnEvent",event, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+	if tradeSkill then
 
-function Tradeskill:UNIT_SPELLCAST_INTERRUPTED(event, unit)
-	if unit ~= "player" then
-		return
+		if message and ( message == L["Interrupted"] 
+		or message == INVENTORY_FULL
+		or (string.find(message, string.sub(SPELL_FAILED_REAGENTS, 1, string.len(SPELL_FAILED_REAGENTS)-2), 1, true) ~= nil)
+		or (string.find(message, string.sub(SPELL_FAILED_REQUIRES_SPELL_FOCUS,1,string.len(SPELL_FAILED_REQUIRES_SPELL_FOCUS)-4), 1, true) ~= nil))
+		then
+			Tradeskill:SPELLCAST_STOP()
+			Tradeskill:SPELLCAST_INTERRUPTED()
+		end
 	end
+end
+]]
+function Tradeskill:SPELLCAST_STOP()
+	--print("SPELLCAST_STOP")
+	if repeattimes and completedcasts and (repeattimes - completedcasts < 1) then 
+		casting = false
+		tradeSkill =  false
+	end
+end
+Tradeskill.SPELLCAST_CHANNEL_STOP = Tradeskill.SPELLCAST_STOP
+
+function Tradeskill:UPDATE_TRADESKILL_RECAST()
+	--print("UPDATE_TRADESKILL_RECAST")
+	recast =  1
+	end
+
+function Tradeskill:SPELLCAST_INTERRUPTED()
 	bail = true
+	casting = false
+	tradeSkill = false
 end
 
 function Tradeskill:DoTradeSkill(index, num)
-	completedcasts = 0
+	tradeSkill =  true
+	completedcasts = -1
 	repeattimes = tonumber(num) or 1
 end
 

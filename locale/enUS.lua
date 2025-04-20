@@ -123,6 +123,7 @@ L["Icon Position"] = true
 L["Include Latency time in the displayed cast bar."] = true
 L["Instance Boot"] = true
 L["Interrupt"] = true
+L["Interrupted"] = true
 L["Interrupt Color"] = true
 L["INTERRUPTED (%s)"] = true
 L["Latency"] = true

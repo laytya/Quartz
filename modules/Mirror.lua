@@ -513,7 +513,7 @@ do
 
 	function Mirror:MIRROR_TIMER_START()
 		local timer, value, maxValue, scale, paused, label = arg1, arg2, arg3, arg4, arg5, arg6
-		printT({"MIRROR_TIMER_START"}, timer, value, maxValue, scale, paused, label)
+		--printT({"MIRROR_TIMER_START"}, timer, value, maxValue, scale, paused, label)
 	
 		showmirror[timer] = { value = value / 1000, maxValue = maxValue / 1000, scale = scale, paused = paused, label = label}
 		update()

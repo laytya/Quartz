@@ -124,9 +124,19 @@ function Latency:DoTradeSkill(id, index)
 	sendTime = GetTime()
 end
 
+local gatherSpells = {
+	[22810] =  true, -- world objecnts
+	[2366] = true, -- herbalism
+	[3365] = true, -- chests
+	[2575] = true, -- mining
+}
+
 function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 	self.hooks[object].UNIT_SPELLCAST_START(object, bar, unit, spell)
 	
+	
+	if gatherSpells[spell.id] then return end -- Open world object
+
 	local startTime, endTime = bar.startTime, bar.endTime
 	if not sendTime or not endTime then return end
 	
@@ -196,8 +206,9 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 	end
 end
 
-function Latency:UNIT_SPELLCAST_DELAYED(object, bar, unit)
-	self.hooks[object].UNIT_SPELLCAST_DELAYED(object, bar, unit)
+function Latency:UNIT_SPELLCAST_DELAYED(object, bar, unit, delay)
+	print("UNIT_SPELLCAST_DELAYED",object, bar, unit, delay)
+	self.hooks[object].UNIT_SPELLCAST_DELAYED(object, bar, unit, delay)
 
 	if db.lagembed then
 		local startTime = bar.startTime - timeDiff + db.lagpadding

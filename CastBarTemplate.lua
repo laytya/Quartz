@@ -146,7 +146,7 @@ local function SetNameText(self, name, rank)
 		end
 	end
 	if mask then
-		self.Text:SetFormattedText(mask, name, arg)
+		self.Text:SetText(format(mask, name, arg))
 	else
 		self.Text:SetText(name)
 	end
@@ -209,9 +209,9 @@ function CastBarTemplate:UNIT_CASTEVENT()
 		self:UNIT_SPELLCAST_SENT(eventType, unit, spellId, nil, target)
 		self:UNIT_SPELLCAST_START(event, unit, {id = spellId, startTime = start, endTime = start + duration})
 	elseif eventType == "FAIL" then
-		self:UNIT_SPELLCAST_FAILED(event, unit)
+		self:UNIT_SPELLCAST_FAILED(event, unit, spellId )
 	elseif eventType == "CAST" and self.casting  then
-		self:UNIT_SPELLCAST_STOP(event, unit)
+		self:UNIT_SPELLCAST_STOP(event, unit, spellId)
 	end
 
 
@@ -253,6 +253,7 @@ function CastBarTemplate:UNIT_SPELLCAST_START(event, unit, spell)
 	self.endTime = spell.endTime
 	self.delay = 0
 	self.fadeOut = nil
+	self.spellId = spell.id
 
 	self.Bar:SetStatusBarColor(unpack(self.casting and Quartz3.db.profile.castingcolor or Quartz3.db.profile.channelingcolor))
 
@@ -286,8 +287,9 @@ function CastBarTemplate:UNIT_SPELLCAST_START(event, unit, spell)
 end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_START = CastBarTemplate.UNIT_SPELLCAST_START
 
-function CastBarTemplate:UNIT_SPELLCAST_STOP(event, unit)
-	if not (self.channeling or self.casting) or (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) then
+function CastBarTemplate:UNIT_SPELLCAST_STOP(event, unit, spellId)
+	if not (self.channeling or self.casting) or (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) 
+		or (self.spellId ~= spellId) then
 		return
 	end
 
@@ -300,12 +302,13 @@ function CastBarTemplate:UNIT_SPELLCAST_STOP(event, unit)
 
 	self.TimeText:SetText("")
 
-	call(self, "UNIT_SPELLCAST_STOP", unit)
+	call(self, "UNIT_SPELLCAST_STOP", unit, spellId)
 end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_STOP = CastBarTemplate.UNIT_SPELLCAST_STOP
 
-function CastBarTemplate:UNIT_SPELLCAST_FAILED(event, unit)
-	if not (self.channeling or self.casting)  or (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) then
+function CastBarTemplate:UNIT_SPELLCAST_FAILED(event, unit, spellId)
+	if not (self.channeling or self.casting)  or (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) 
+		or (self.spellId ~= spellId)  then
 		return
 	end
 
@@ -317,7 +320,7 @@ function CastBarTemplate:UNIT_SPELLCAST_FAILED(event, unit)
 
 	self.TimeText:SetText("")
 
-	call(self, "UNIT_SPELLCAST_FAILED", unit)
+	call(self, "UNIT_SPELLCAST_FAILED", unit, spellId)
 end
 
 function CastBarTemplate:UNIT_SPELLCAST_INTERRUPTED(event, unit)
@@ -356,7 +359,7 @@ function CastBarTemplate:SPELLCAST_DELAYED(e,d)
 	call(self, "UNIT_SPELLCAST_DELAYED", unit, d)
 end
 CastBarTemplate.SPELLCAST_CHANNEL_UPDATE=CastBarTemplate.SPELLCAST_DELAYED
-
+--[[
 function CastBarTemplate:UNIT_SPELLCAST_DELAYED(event, unit)
 	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") or call(self, "PreShowCondition", unit) then
 		return
@@ -387,7 +390,7 @@ function CastBarTemplate:UNIT_SPELLCAST_DELAYED(event, unit)
 	call(self, "UNIT_SPELLCAST_DELAYED", unit)
 end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_UPDATE = CastBarTemplate.UNIT_SPELLCAST_DELAYED
-
+]]
 function CastBarTemplate:SPELLCAST_START(s,d)
 	--printT({event,s,d})
 end

@@ -158,9 +158,9 @@ function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
 	end
 end
 
-function Tradeskill:UNIT_SPELLCAST_STOP(object, event, unit)
+function Tradeskill:UNIT_SPELLCAST_STOP(object, event, unit, spellId)
 	if unit ~= "player" then
-		return self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit)
+		return self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit, spellId)
 	end
 	--print("Tradeskill:UNIT_SPELLCAST_STOP")
 	--self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit)
@@ -169,10 +169,10 @@ function Tradeskill:UNIT_SPELLCAST_STOP(object, event, unit)
 		if  repeattimes - completedcasts < 2 then 
 	casting = false
 			tradeSkill =  false
-			self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit)
+			self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit, spellId)
 		end
 	else
-		self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit) 
+		self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit, spellId )
 	end
 end
 --[[

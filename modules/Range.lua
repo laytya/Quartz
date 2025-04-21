@@ -95,7 +95,7 @@ function Range:UNIT_CASTEVENT()
 		if not castBar then
 			castBar = Player.Bar.Bar
 		end
-		if target then
+		if target and castBar.spellId == spellId then
 			spell = getSlot(spellId)
 			modified, r, g, b = nil, nil, nil, nil
 			f:SetScript("OnUpdate", OnUpdate)

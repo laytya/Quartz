@@ -222,6 +222,9 @@ local function getChannelingTicks(spell)
 end
 
 function Player:UNIT_SPELLCAST_START(bar, unit, spell)
+	if spell.id == 22810 then 
+		self.Bar.Text:SetText("Opening...")
+	end
 	if bar.channeling then
 		local spell = SpellInfo(spell.id)
 		bar.channelingTicks = getChannelingTicks(spell)
@@ -231,11 +234,11 @@ function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 	end
 end
 
-function Player:UNIT_SPELLCAST_STOP(bar, unit)
+function Player:UNIT_SPELLCAST_STOP(bar, unit, spellId)
 	setBarTicks(0)
 end
 
-function Player:UNIT_SPELLCAST_FAILED(bar, unit)
+function Player:UNIT_SPELLCAST_FAILED(bar, unit, spellId)
 	setBarTicks(0)
 end
 

@@ -79,6 +79,7 @@ function Latency:OnEnable()
 	self:SecureHook("UseContainerItem")
 	self:SecureHook("UseInventoryItem")
 	self:SecureHook("DoTradeSkill")
+	self:HookScript(WorldFrame, "OnMouseDown", 'WorldFrame_OnMouseDown')
 
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)
 		if mtype == "statusbar" then
@@ -124,6 +125,10 @@ function Latency:DoTradeSkill(id, index)
 	sendTime = GetTime()
 end
 
+function Latency:WorldFrame_OnMouseDown()
+	sendTime = GetTime()
+end
+
 local gatherSpells = {
 	[22810] =  true, -- world objects
 	[2366] = true, -- herbalism
@@ -131,6 +136,9 @@ local gatherSpells = {
 	[2575] = true, -- mining
 	[6478] = true, -- opening
 	[6477] = true,
+	[5206] = true, -- plant seeds
+	[5316] =  true,
+	[13262] =true,
 }
 
 function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)

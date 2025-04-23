@@ -85,14 +85,12 @@ do
 	end
 end
 
-
 function Flight:OnInitialize()
 	self.db = Quartz3.db:RegisterNamespace(MODNAME, defaults)
 	db = self.db.profile
 	
 	self:SetEnabledState(Quartz3:GetModuleEnabled(MODNAME))
 	Quartz3:RegisterModuleOptions(MODNAME, getOptions, L["Flight"])
-
 
 end
 
@@ -162,7 +160,8 @@ function Flight:BeginFlight(duration, destination)
 	started = false
 	
 	Player.Bar.casting = true
-	Player.Bar.startTime = GetTime()
+	local currentTime = GetTime()
+	Player.Bar.startTime = currentTime
 	
 	Player.Bar.delay = 0
 	Player.Bar.fadeOut = nil
@@ -181,10 +180,12 @@ function Flight:BeginFlight(duration, destination)
 	local position = Player.db.profile.timetextposition
 	
 	if position == "caststart" then
-		Player.Bar.TimeText:SetPoint("LEFT", Player.Bar.Bar, "LEFT", Player.db.profile.timetextx, Player.db.profile.timetexty)
+        Player.Bar.TimeText:SetPoint("LEFT", Player.Bar.Bar, "LEFT", Player.db.profile.timetextx,
+            Player.db.profile.timetexty)
 		Player.Bar.TimeText:SetJustifyH("LEFT")
 	elseif position == "castend" then
-		Player.Bar.TimeText:SetPoint("RIGHT", Player.Bar.Bar, "RIGHT", -1 * Player.db.profile.timetextx, Player.db.profile.timetexty)
+        Player.Bar.TimeText:SetPoint("RIGHT", Player.Bar.Bar, "RIGHT", -1 * Player.db.profile.timetextx,
+            Player.db.profile.timetexty)
 		Player.Bar.TimeText:SetJustifyH("RIGHT")
 	end
 	Player.Bar:SetAlpha(Player.db.profile.alpha)
@@ -198,7 +199,7 @@ function Flight:BeginFlight(duration, destination)
 		Player.Bar.Bar:SetValue(0)
 		Player.Bar.Spark:Show()
 	end
-	Player.Bar.endTime = GetTime() + duration
+    Player.Bar.endTime = currentTime + duration
 	Player.Bar:Show()
 
 end

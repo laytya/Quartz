@@ -125,10 +125,12 @@ function Latency:DoTradeSkill(id, index)
 end
 
 local gatherSpells = {
-	[22810] =  true, -- world objecnts
+	[22810] =  true, -- world objects
 	[2366] = true, -- herbalism
 	[3365] = true, -- chests
 	[2575] = true, -- mining
+	[6478] = true, -- opening
+	[6477] = true,
 }
 
 function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)

@@ -27,9 +27,11 @@ local Player = Quartz3:GetModule("Player")
 -- Upvalues
 local GetTime = GetTime
 local unpack = unpack
+local TimeFmt, RomanFmt = Quartz3.Util.TimeFormat, Quartz3.Util.ConvertRankToRomanNumeral
 
 local db, getOptions
-
+local FlightMapX, FlightMapY = 0,0
+local started
 local defaults = {
 	profile = {
 		color = {0.7, 1, 0.7},
@@ -45,6 +47,11 @@ do
 		name = L["Flight"],
 		order = 600,
 		args = {
+			header = {
+				type = 'header',
+				name = '|cffff0000This module will work only if you have FlightMap addon.|r',
+				order =3,
+			},
 			toggle = {
 				type = "toggle",
 				name = L["Enable"],
@@ -61,7 +68,7 @@ do
 				name = L["Flight Map Color"],
 				desc = L["Set the color to turn the cast bar when taking a flight path"],
 				get = function() return unpack(db.color) end,
-				set = function(info, ...) db.color = {...} end,
+				set = function(info, ...) db.color = {unpack(arg)} end,
 				order = 101,
 			},
 			deplete = {
@@ -85,46 +92,78 @@ function Flight:OnInitialize()
 	
 	self:SetEnabledState(Quartz3:GetModuleEnabled(MODNAME))
 	Quartz3:RegisterModuleOptions(MODNAME, getOptions, L["Flight"])
+
+
 end
 
 function Flight:ApplySettings()
 	db = self.db.profile
 end
 
---[[
-if InFlight then
 	function Flight:OnEnable()
-		self:RawHook(InFlight, "StartTimer")
-	end
-
-	function Flight:StartTimer(object, ...)
-		self.hooks[object].StartTimer(object, ...)
+	if (FlightMapFrame) then
+		self:RawHook('TakeTaxiNode')
 		
-		local f = InFlightBar
-		local _, duration = f:GetMinMaxValues()
-		local _, locText = f:GetRegions()
-		local destination = locText:GetText()
-
-		self:BeginFlight(duration, destination)
 	end
-else ]]
-if FlightMapTimes_BeginFlight then
-	function Flight:OnEnable()
-		self:RawHook("FlightMapTimes_BeginFlight")
 	end
 
-	function Flight:FlightMapTimes_BeginFlight(duration, destination)
-		if duration and duration > 0 then
-			self:BeginFlight(duration, destination)
-		end
-		return self.hooks.FlightMapTimes_BeginFlight(duration, destination)
+function Flight:OnDisable()
+	self:UnHook('TakeTaxiNode')
+	if FlightMapTimesFrame then
+		if FlightMapX and FlightMapY then
+      FlightMapTimesFrame:ClearAllPoints()
+      FlightMapTimesFrame:SetPoint("BOTTOMLEFT", "UIParent", "BOTTOMLEFT", FlightMapX, FlightMapY )
+    end
 	end
 end
 
+function Flight:TakeTaxiNode(id)
+	self.hooks.TakeTaxiNode(id)
+	if (FlightMapTimesFrame) then
+  	if (FlightMapTimesFrame:IsVisible()) then
+        local duration = nil
+        if (FlightMapTimesFrame.endTime ~= nil) then
+          duration = (FlightMapTimesFrame.endTime - FlightMapTimesFrame.startTime)
+        end
+				self:BeginFlight(duration, FlightMapTimesFrame.endPoint)
+		
+        -- store the flight map position
+        FlightMapX = FlightMapTimesFrame:GetLeft()
+        FlightMapY = FlightMapTimesFrame:GetBottom()
+
+        -- now move the frame off the screen
+        FlightMapTimesFrame:ClearAllPoints()
+        FlightMapTimesFrame:SetPoint("BOTTOMLEFT", "UIParent", "BOTTOMLEFT", -4000, 4000 )
+  	end
+	end
+	end
+
+function Flight:OnUpdate(frame)
+	if (not started) then
+		if UnitOnTaxi("player") then started = true; end
+		return;
+		end
+	local currentTime = GetTime()
+	if not UnitOnTaxi("player") then
+		
+		Player.Bar.fadeOut = true
+		Player.Bar.stopTime = currentTime
+		Player.Bar.endTime = currentTime
+		Player.Bar.Bar:SetValue(1)
+		Player.Bar.Bar:SetMinMaxValues(0, 1)
+		
+		Flight.hooks[Player.Bar].OnUpdate(frame)
+		Flight:Unhook(Player.Bar, 'OnUpdate')
+	end
+	Player.Bar.TimeText:SetText(format(TimeFmt(currentTime - Player.Bar.startTime)))
+end
+
 function Flight:BeginFlight(duration, destination)
+	started = false
+	
 	Player.Bar.casting = true
 	Player.Bar.startTime = GetTime()
-	Player.Bar.endTime = GetTime() + duration
+	
 	Player.Bar.delay = 0
 	Player.Bar.fadeOut = nil
 	if db.deplete then
@@ -136,16 +175,11 @@ function Flight:BeginFlight(duration, destination)
 	end
 	
 	Player.Bar.Bar:SetStatusBarColor(unpack(db.color))
-	
-	Player.Bar.Bar:SetValue(0)
-	Player.Bar:Show()
-	Player.Bar:SetAlpha(Player.db.profile.alpha)
-	
-	Player.Bar.Spark:Show()
 	Player.Bar.Icon:SetTexture("Interface/Icons/Ability_Hunter_EagleEye")
 	Player.Bar.Text:SetText(destination)
 	
 	local position = Player.db.profile.timetextposition
+	
 	if position == "caststart" then
 		Player.Bar.TimeText:SetPoint("LEFT", Player.Bar.Bar, "LEFT", Player.db.profile.timetextx, Player.db.profile.timetexty)
 		Player.Bar.TimeText:SetJustifyH("LEFT")
@@ -153,4 +187,18 @@ function Flight:BeginFlight(duration, destination)
 		Player.Bar.TimeText:SetPoint("RIGHT", Player.Bar.Bar, "RIGHT", -1 * Player.db.profile.timetextx, Player.db.profile.timetexty)
 		Player.Bar.TimeText:SetJustifyH("RIGHT")
 	end
+	Player.Bar:SetAlpha(Player.db.profile.alpha)
+
+	if not duration then
+		Player.Bar.Bar:SetValue(1)
+		Player.Bar.Spark:Hide()
+		duration = 0
+		self:RawHookScript(Player.Bar, 'OnUpdate')
+	else
+		Player.Bar.Bar:SetValue(0)
+		Player.Bar.Spark:Show()
+	end
+	Player.Bar.endTime = GetTime() + duration
+	Player.Bar:Show()
+
 end

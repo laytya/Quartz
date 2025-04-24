@@ -190,16 +190,16 @@ function Flight:BeginFlight(duration, destination)
 	end
 	Player.Bar:SetAlpha(Player.db.profile.alpha)
 
-	if not duration then
+	if duration and duration > 0 then
+		Player.Bar.Bar:SetValue(0)
+	Player.Bar.Spark:Show()
+	else
 		Player.Bar.Bar:SetValue(1)
 		Player.Bar.Spark:Hide()
-		duration = 0
+		duration = 0.25
 		self:RawHookScript(Player.Bar, 'OnUpdate')
-	else
-		Player.Bar.Bar:SetValue(0)
-		Player.Bar.Spark:Show()
 	end
-    Player.Bar.endTime = currentTime + duration
+	Player.Bar.endTime = currentTime + duration
 	Player.Bar:Show()
 
 end

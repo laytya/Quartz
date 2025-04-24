@@ -210,6 +210,9 @@ local function OnUpdate()
 	if not combat  then
 		this:Hide()
 	end
+	if slot == RANGED and GetTime() - range_fader > 10 then
+		this:Hide()
+	end 
 	this.elapsed  = this.elapsed  + arg1
 	if this.elapsed  >= 0.03 then
 		if (slot == 1 or slot == 2) then
@@ -389,7 +392,7 @@ function Swing:COMBAT_MSG()
 	if (string.find(arg1, ".* attacks. You parry.")) or (string.find(arg1, ".* was parried.")) then
 		-- Only the upcoming swing gets parry haste benefit
 		if (isDualWield()) then
-			if timer[OFFHAND] < timer[MAINHAND] then
+			if timer[OFFHAND] and timer[MAINHAND] and timer[OFFHAND] < timer[MAINHAND] then
 				local minimum = getWeaponSpeed(OFFHAND) * 0.20
 				local reduct = getWeaponSpeed(OFFHAND) * 0.40
 				timer[OFFHAND] = timer[OFFHAND] - reduct
@@ -401,7 +404,7 @@ function Swing:COMBAT_MSG()
 end
 
 		local minimum = getWeaponSpeed(MAINHAND) * 0.20
-		if (timer[MAINHAND] > minimum) then
+		if (timer[MAINHAND] and timer[MAINHAND] > minimum) then
 			local reduct = getWeaponSpeed(MAINHAND) * 0.40
 			local newTimer = timer[MAINHAND] - reduct
 			if (newTimer < minimum) then

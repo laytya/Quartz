@@ -139,6 +139,7 @@ local gatherSpells = {
 	[5206] = true, -- plant seeds
 	[5316] =  true,
 	[13262] =true,
+	[7418] = true,
 }
 
 function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)

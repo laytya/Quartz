@@ -25,13 +25,13 @@ local Player = Quartz3:GetModule("Player")
 
 local media = LibStub("LibSharedMedia-3.0")
 local lsmlist = AceGUIWidgetLSMlists
-local playerGuid = nil
 
 ----------------------------
 -- Upvalues
 local GetTime = GetTime
 local unpack = unpack
 local getn, format = table.getn, string.format
+local UnitIsUnit = UnitIsUnit
 
 local lagbox, lagtext, db, timeDiff, sendTime, alignoutside
 timeDiff = 0
@@ -218,7 +218,7 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 end
 
 function Latency:UNIT_SPELLCAST_DELAYED(object, bar, unit, delay)
-	print("UNIT_SPELLCAST_DELAYED",object, bar, unit, delay)
+	--print("UNIT_SPELLCAST_DELAYED",object, bar, unit, delay)
 	self.hooks[object].UNIT_SPELLCAST_DELAYED(object, bar, unit, delay)
 
 	if db.lagembed then
@@ -230,12 +230,9 @@ function Latency:UNIT_SPELLCAST_DELAYED(object, bar, unit, delay)
 end
 
 function Latency:UNIT_CASTEVENT()
-	local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
-	if playerGuid == nil then
-		_, playerGuid = UnitExists("player")
-	end
+	--local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
 	
-	if playerGuid ~= caster then return end
+	if not UnitIsUnit(arg1,"player") then return end
 	
 	if eventType == "FAIL" or  (eventType == "CAST" and Player.Bar.casting) then
 		lagbox:Hide()

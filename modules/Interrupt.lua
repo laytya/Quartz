@@ -32,6 +32,7 @@ local db, getOptions
 local GetTime = GetTime
 local unpack = unpack
 local SPELLINTERRUPTOTHERSELF, UNKNOWN = SPELLINTERRUPTOTHERSELF, UNKNOWN
+local UnitIsUnit = UnitIsUnit
 
 local defaults = {
 	profile = {
@@ -111,14 +112,13 @@ function Interrupt:UNIT_CASTEVENT()
 	if eventType == "CAST" then
 		local spell = SpellInfo(spellId)
 		if (Interrupts[spell] ~= nil ) then
-			local unit = Quartz3:GetUnitFromGuid(target)
 			local bar
 	--		printT({unit,spell})
-			if unit == "player" then 
+			if UnitIsUnit(target, "player") then 
 				bar = Player.Bar
-			elseif unit == "target" then
+			elseif UnitIsUnit(target, "target") then
 				bar = Target.Bar
-			elseif unit == "pet" then
+			elseif UnitIsUnit(target, "pet") then
 				bar = Pet.Bar
 			else
 				return

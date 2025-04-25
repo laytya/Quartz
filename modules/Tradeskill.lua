@@ -30,6 +30,7 @@ local TimeFmt = Quartz3.Util.TimeFormat
 local GetTime, UnitCastingInfo = GetTime, UnitCastingInfo
 local unpack, tonumber, format = unpack, tonumber, format
 local getn, format = table.getn, string.format
+local UnitIsUnit = UnitIsUnit
 
 local getOptions
 
@@ -110,7 +111,7 @@ function Tradeskill:OnEnable()
 end
 
 function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
-	if unit ~= "player" then
+	if not UnitIsUnit(unit, "player") then
 		return self.hooks[object].UNIT_SPELLCAST_START(object, event, unit, spell)
 	end
 	local spellName, _, icon = SpellInfo(spell.id)
@@ -159,7 +160,7 @@ function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
 end
 
 function Tradeskill:UNIT_SPELLCAST_STOP(object, event, unit, spellId)
-	if unit ~= "player" then
+	if not UnitIsUnit(unit, "player") then
 		return self.hooks[object].UNIT_SPELLCAST_STOP(object, event, unit, spellId)
 	end
 	--print("Tradeskill:UNIT_SPELLCAST_STOP")

@@ -34,8 +34,9 @@ local math_abs, bit_band, unpack = math.abs, bit.band, unpack
 local COMBATLOG_FILTER_ME = COMBATLOG_FILTER_ME
 
 local getn, format = table.getn, string.format
+local UnitIsUnit = UnitIsUnit
 
-local playerclass, playerGuid
+local playerGuid
 local autoshotname = SpellInfo(75)
 local slam = SpellInfo(1464)
 local swordprocname = SpellInfo(12281) --??
@@ -251,8 +252,7 @@ function Swing:OnInitialize()
 end
 
 function Swing:OnEnable()
-	local _, c = UnitClass("player")
-	playerclass = playerclass or c
+
 	-- fired when autoattack is enabled/disabled.
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -325,7 +325,7 @@ function Swing:ACTIONBAR_SLOT_CHANGED()
 end
 
 function Swing:UNIT_CASTEVENT()
-	if arg1 ~= playerGuid then return end
+	if not UnitIsUnit(arg1,"player") then return end
 
 	local spell = SpellInfo(arg4)
 

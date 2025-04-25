@@ -23,12 +23,13 @@ local MODNAME = "Range"
 local Range = Quartz3:NewModule(MODNAME, "AceEvent-3.0")
 local Player = Quartz3:GetModule("Player")
 local getSlot = Quartz3.getSlot
-local playerGuid = nil
+
 ----------------------------
 -- Upvalues
 local CreateFrame, UIParent = CreateFrame, UIParent
 local UnitCastingInfo, UnitChannelInfo, UnitName, IsSpellInRange = UnitCastingInfo, UnitChannelInfo, UnitName, IsSpellInRange
 local unpack = unpack
+local UnitIsUnit = UnitIsUnit
 
 local f, OnUpdate, db, getOptions, spell, target, modified, r, g, b, castBar
 
@@ -84,12 +85,7 @@ end
 
 function Range:UNIT_CASTEVENT()
 	local caster, casttarget, eventType, spellId, start, duration, _= arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
-	if playerGuid == nil then
-		_, playerGuid = UnitExists("player")
-	end
-	if caster ~= playerGuid then
-		return
-	end
+	if not UnitIsUnit(caster, "player") then return	end
 	target = casttarget
 	if eventType == "START" or eventType == "CHANNEL" then
 		if not castBar then

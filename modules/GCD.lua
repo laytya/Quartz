@@ -27,6 +27,7 @@ local Player = Quartz3:GetModule("Player")
 -- Upvalues
 local CreateFrame, GetTime, UIParent, GetSpellCooldown = CreateFrame, GetTime, UIParent, GetSpellCooldown
 local unpack = unpack
+local getn = table.getn
 
 local gcdbar, gcdbar_width, gcdspark
 local starttime, duration, warned
@@ -80,9 +81,7 @@ function GCD:OnInitialize()
 end
 
 function GCD:OnEnable()
-	--self:RegisterEvent("UNIT_SPELLCAST_SENT","CheckGCD")
-	self:RegisterEvent("UNIT_SPELLCAST_START","CheckGCD")
-	self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED","CheckGCD")
+	self:RegisterEvent("UNIT_CASTEVENT")
 	if not gcdbar then
 		gcdbar = CreateFrame("Frame", "Quartz3GCDBar", UIParent)
 		gcdbar:SetFrameStrata("HIGH")
@@ -102,9 +101,12 @@ function GCD:OnDisable()
 	gcdbar:Hide()
 end
 
-function GCD:CheckGCD(event, unit, spell)
-	if unit == "player" then
-		local start, dur = GetSpellCooldown(spell)
+function GCD:UNIT_CASTEVENT()
+	--local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
+	if not UnitIsUnit(arg1, "player") or not (arg3 == "CAST")  then return end
+	local slot = Quartz3.getSlot(arg4)
+	if slot then
+		local start, dur = GetActionCooldown(slot)
 		if dur and dur > 0 and dur <= 1.5 then
 			starttime = start
 			duration = dur
@@ -158,12 +160,12 @@ do
 	end
 	
 	local function setOpt(info, value)
-		db[info[#info]] = value
+		db[info[getn(info)]] = value
 		GCD:ApplySettings()
 	end
 
 	local function getOpt(info)
-		return db[info[#info]]
+		return db[info[getn(info)]]
 	end
 
 	local function getColor(info)

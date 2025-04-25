@@ -28,6 +28,7 @@ local min, type, format, unpack, setmetatable = math.min, type, string.format, u
 local CreateFrame, GetTime, UIParent = CreateFrame, GetTime, UIParent
 local UnitName, UnitCastingInfo, UnitChannelInfo = UnitName, UnitCastingInfo, UnitChannelInfo
 local getn = table.getn
+local UnitIsUnit = UnitIsUnit
 
 local CastBarTemplate = CreateFrame("Frame")
 local CastBarTemplate_MT = {__index = CastBarTemplate}
@@ -154,7 +155,7 @@ end
 CastBarTemplate.SetNameText = SetNameText
 
 local function ToggleCastNotInterruptible(self, notInterruptible, init)
-	if self.unit == "player" and not init then return end
+	if UnitIsUnit(self.unit, "player") and not init then return end
 	local db = self.config
 
 	if notInterruptible and db.noInterruptChangeColor then
@@ -196,8 +197,8 @@ function CastBarTemplate:UNIT_CASTEVENT()
 
 	local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
   
-	local unit, event = Quartz3:GetUnitFromGuid(caster)
-	if unit == "player" then
+	local unit, event = caster, ""
+	if UnitIsUnit(unit, "player") then
 		--print(caster, target, eventType, spellId, start, duration)
 	end
 	if eventType == "START" then
@@ -218,7 +219,7 @@ function CastBarTemplate:UNIT_CASTEVENT()
 end
 
 function CastBarTemplate:UNIT_SPELLCAST_SENT(event, unit, spell, rank, target)
-	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") then
+	if not UnitIsUnit(unit,self.unit) then
 		return
 	end
 	if target then
@@ -232,7 +233,7 @@ function CastBarTemplate:UNIT_SPELLCAST_SENT(event, unit, spell, rank, target)
 end
 
 function CastBarTemplate:UNIT_SPELLCAST_START(event, unit, spell)
-	if (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) or call(self, "PreShowCondition", unit) then
+	if not UnitIsUnit(unit,self.unit)  or call(self, "PreShowCondition", unit) then
 		return
 	end
 	
@@ -288,7 +289,7 @@ end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_START = CastBarTemplate.UNIT_SPELLCAST_START
 
 function CastBarTemplate:UNIT_SPELLCAST_STOP(event, unit, spellId)
-	if not (self.channeling or self.casting) or (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) 
+	if not (self.channeling or self.casting) or not UnitIsUnit(unit,self.unit)  
 		or (self.spellId ~= spellId) then
 		return
 	end
@@ -307,7 +308,7 @@ end
 CastBarTemplate.UNIT_SPELLCAST_CHANNEL_STOP = CastBarTemplate.UNIT_SPELLCAST_STOP
 
 function CastBarTemplate:UNIT_SPELLCAST_FAILED(event, unit, spellId)
-	if not (self.channeling or self.casting)  or (unit ~= self.unit and not (self.unit == "player" and unit == "vehicle")) 
+	if not (self.channeling or self.casting)  or not UnitIsUnit(unit,self.unit) 
 		or (self.spellId ~= spellId)  then
 		return
 	end
@@ -324,7 +325,7 @@ function CastBarTemplate:UNIT_SPELLCAST_FAILED(event, unit, spellId)
 end
 
 function CastBarTemplate:UNIT_SPELLCAST_INTERRUPTED(event, unit)
-	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") then
+	if not UnitIsUnit(unit,self.unit) then
 		return
 	end
 	self.casting, self.channeling = nil, nil
@@ -344,7 +345,7 @@ CastBarTemplate.UNIT_SPELLCAST_CHANNEL_INTERRUPTED = CastBarTemplate.UNIT_SPELLC
 function CastBarTemplate:SPELLCAST_DELAYED(e,d)
   d=d/1000
   local unit = "player"
-	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") or call(self, "PreShowCondition", unit) then
+	if not UnitIsUnit(unit,self.unit)  or call(self, "PreShowCondition", unit) then
 		return
 	end
 	self.startTime = self.startTime + d
@@ -402,7 +403,7 @@ function CastBarTemplate:SPELLCAST_CHANNEL_STOP(s,d)
 	self:UNIT_SPELLCAST_STOP("UNIT_SPELLCAST_CHANNEL_STOP", "player")
 end
 
-
+--[[
 
 function CastBarTemplate:UNIT_SPELLCAST_INTERRUPTIBLE(event, unit)
 	if unit ~= self.unit then
@@ -417,7 +418,7 @@ function CastBarTemplate:UNIT_SPELLCAST_NOT_INTERRUPTIBLE(event, unit)
 	end
 	ToggleCastNotInterruptible(self, true)
 end
-
+]]
 
 function CastBarTemplate:UpdateUnit()
 	--[[if UnitCastingInfo(self.unit) then

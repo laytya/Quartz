@@ -246,6 +246,9 @@ function Player:UNIT_SPELLCAST_INTERRUPTED(bar, unit)
 	setBarTicks(0)
 end
 
-function Player:UNIT_SPELLCAST_DELAYED(bar, unit)
+function Player:UNIT_SPELLCAST_DELAYED(bar, unit, d)
+
+end
+function Player:UNIT_SPELLCAST_CHANNEL_UPDATE(bar, unit, d)
 
 end

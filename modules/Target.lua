@@ -62,6 +62,13 @@ do
 				desc = L["Show this castbar for hostile units"],
 				order = 101,
 			}
+			options.args.targetname = {
+				type = "toggle",
+				name = L["Show Target Name"],
+				desc = L["Display target name of spellcasts after spell name"],
+				disabled = function() return db.hidenametext end,
+				order = 402,
+			}
 		end
 		return options
 	end

@@ -19,6 +19,7 @@
 local Quartz3 = LibStub("AceAddon-3.0"):GetAddon("Quartz3")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
 
+local LibWindow = LibStub("LibWindow-1.1")
 local media = LibStub("LibSharedMedia-3.0")
 local lsmlist = AceGUIWidgetLSMlists
 
@@ -27,7 +28,7 @@ local lsmlist = AceGUIWidgetLSMlists
 local min, type, format, unpack, setmetatable = math.min, type, string.format, unpack, setmetatable
 local CreateFrame, GetTime, UIParent = CreateFrame, GetTime, UIParent
 local UnitName, UnitCastingInfo, UnitChannelInfo = UnitName, UnitCastingInfo, UnitChannelInfo
-local getn = table.getn
+local getn, gsub = table.getn, string.gsub
 local UnitIsUnit = UnitIsUnit
 
 local CastBarTemplate = CreateFrame("Frame")
@@ -79,19 +80,20 @@ local function OnUpdate()
 
 		self.Bar:SetValue(perc)
 		self.Spark:ClearAllPoints()
-		self.Spark:SetPoint("CENTER", self.Bar, "LEFT", perc * db.w, 0)
+		self.Spark:SetPoint("CENTER", self.Bar, "LEFT", perc * self.Bar:GetWidth(), 0)
 
+		local timeTextValue = db.casttimecountup and ((endTime - startTime) - remainingTime) or remainingTime
 		if delay and delay ~= 0 then
 			if db.hidecasttime then
-				self.TimeText:SetText(format("|cffff0000+%.1f|cffffffff %s", delay, format(TimeFmt(remainingTime))))
+				self.TimeText:SetText(format(delayFormat, delay, format(TimeFmt(timeTextValue))))
 			else
-				self.TimeText:SetText(format("|cffff0000+%.1f|cffffffff %s / %s", delay, format(TimeFmt(remainingTime)), format(TimeFmt(endTime - startTime, true))))
+				self.TimeText:SetText(format(delayFormatTime, delay, format(TimeFmt(timeTextValue)), format(TimeFmt(endTime - startTime, true))))
 			end
 		else
 			if db.hidecasttime then
-				self.TimeText:SetText(format(TimeFmt(remainingTime)))
+				self.TimeText:SetText(format(TimeFmt(timeTextValue)))
 			else
-				self.TimeText:SetText(format("%s / %s", format(TimeFmt(remainingTime)), format(TimeFmt(endTime - startTime, true))))
+				self.TimeText:SetText(format("%s / %s", format(TimeFmt(timeTextValue)), format(TimeFmt(endTime - startTime, true))))
 			end
 		end
 
@@ -133,26 +135,28 @@ end
 ----------------------------
 -- Template Methods
 
-local function SetNameText(self, name, rank)
+function CastBarTemplate:SetNameText(name, rank)
+	local self =  this
 	local mask, arg = nil, nil
 	if self.config.spellrank and rank then
 		mask, arg = RomanFmt(rank, self.config.spellrankstyle)
 	end
 
 	if self.config.targetname and self.targetName and self.targetName ~= "" then
-		if mask then
-			mask = mask .. " -> " .. self.targetName
+		local s = mask and format(mask, name, arg) or name
+		if self.config.targetnamestyle == "on" then
+			self.Text:SetText(format(L["%s on %s"], s, self.targetName))
 		else
-			name = name .. " -> " .. self.targetName
-		end
+			self.Text:SetText(format("%s -> %s", s, self.targetName))
 	end
+	else
 	if mask then
 		self.Text:SetText(format(mask, name, arg))
 	else
 		self.Text:SetText(name)
 	end
 end
-CastBarTemplate.SetNameText = SetNameText
+end
 
 local function ToggleCastNotInterruptible(self, notInterruptible, init)
 	if UnitIsUnit(self.unit, "player") and not init then return end
@@ -262,7 +266,7 @@ function CastBarTemplate:UNIT_SPELLCAST_START(event, unit, spell)
 	self:Show()
 	self:SetAlpha(db.alpha)
 
-	SetNameText(self, displayName, rank)
+	self:SetNameText(displayName, rank)
 
 	self.Spark:Show()
 
@@ -354,12 +358,27 @@ function CastBarTemplate:SPELLCAST_DELAYED(e,d)
 	if self.casting then
 		self.delay = (self.delay or 0) + d
 	else
-		self.delay = (self.delay or 0) + d
+		self.delay = (self.delay or 0) - d
 	end
 
 	call(self, "UNIT_SPELLCAST_DELAYED", unit, d)
 end
-CastBarTemplate.SPELLCAST_CHANNEL_UPDATE=CastBarTemplate.SPELLCAST_DELAYED
+
+function CastBarTemplate:SPELLCAST_CHANNEL_UPDATE(e,d)
+	d=d/1000
+  local unit = "player"
+	if not UnitIsUnit(unit, self.unit)  or call(self, "PreShowCondition", unit) then
+		return
+	end
+	local curTime = GetTime()
+	local origDuration = self.endTime - self.startTime
+	local current = self.endTime - curTime
+	self.endTime = curTime + d
+	self.delay = (self.delay or 0) +  current - d
+	self.startTime = self.endTime - origDuration
+
+	call(self, "UNIT_SPELLCAST_CHANNEL_UPDATE", unit, d)
+end
 --[[
 function CastBarTemplate:UNIT_SPELLCAST_DELAYED(event, unit)
 	if unit ~= self.unit and not (self.unit == "player" and unit == "vehicle") or call(self, "PreShowCondition", unit) then
@@ -432,6 +451,7 @@ end
 
 function CastBarTemplate:SetConfig(config)
 	self.config = config
+	LibWindow.RegisterConfig(self, self.config)
 end
 
 function CastBarTemplate:ApplySettings()
@@ -441,17 +461,24 @@ function CastBarTemplate:ApplySettings()
 	if not db.x then
 		db.x = (UIParent:GetWidth() / 2 - (db.w * db.scale) / 2) / db.scale
 	end
-	self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", db.x, db.y)
+	--self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", db.x, db.y)
 	self:SetWidth(db.w + 10)
 	self:SetHeight(db.h + 10)
 	self:SetAlpha(db.alpha)
-	self:SetScale(db.scale)
+	--self:SetScale(db.scale)
+	
+	LibWindow.RestorePosition(self)
+
+	self:SetFrameStrata(db.strata)
 
 	ToggleCastNotInterruptible(self, self.lastNotInterruptible, true)
 
+	local iconwidth = db.h + db.icongap
+	local iconoffset = db.hideicon and 0 or (iconwidth/2 * (db.iconposition == "left" and 1 or -1))
+	local castbarwidth = db.hideicon and db.w or db.w-iconwidth
 	self.Bar:ClearAllPoints()
-	self.Bar:SetPoint("CENTER",self,"CENTER")
-	self.Bar:SetWidth(db.w)
+	self.Bar:SetPoint("CENTER",self,"CENTER", iconoffset, 0)
+	self.Bar:SetWidth(castbarwidth)
 	self.Bar:SetHeight(db.h)
 	self.Bar:SetStatusBarTexture(media:Fetch("statusbar", db.texture))
 	--self.Bar:GetStatusBarTexture():SetHorizTile(false)
@@ -463,13 +490,16 @@ function CastBarTemplate:ApplySettings()
 	else
 		self.TimeText:Show()
 		self.TimeText:ClearAllPoints()
-		self.TimeText:SetWidth(db.w)
+		self.TimeText:SetWidth(castbarwidth)
 		local position = db.timetextposition
 		if position == "left" then
 			self.TimeText:SetPoint("LEFT", self.Bar, "LEFT", db.timetextx, db.timetexty)
 			self.TimeText:SetJustifyH("LEFT")
 		elseif position == "center" then
 			self.TimeText:SetPoint("CENTER", self.Bar, "CENTER", db.timetextx, db.timetexty)
+			self.TimeText:SetJustifyH("CENTER")
+		elseif position == "centerback" then
+			self.TimeText:SetPoint("CENTER", self, "CENTER", db.timetextx, db.timetexty)
 			self.TimeText:SetJustifyH("CENTER")
 		elseif position == "right" then
 			self.TimeText:SetPoint("RIGHT", self.Bar, "RIGHT", -1 * db.timetextx, db.timetexty)
@@ -485,7 +515,7 @@ function CastBarTemplate:ApplySettings()
 
 	local temptext = self.TimeText:GetText()
 	if db.hidecasttime then
-		self.TimeText:SetText(TimeFmt(10))
+		self.TimeText:SetText(format(TimeFmt(10)))
 	else
 		self.TimeText:SetText(format("%s / %s", format(TimeFmt(10)), format(TimeFmt(10, true))))
 	end
@@ -502,20 +532,23 @@ function CastBarTemplate:ApplySettings()
 			self.Text:SetPoint("LEFT", self.Bar, "LEFT", db.nametextx, db.nametexty)
 			self.Text:SetJustifyH("LEFT")
 			if db.hidetimetext or db.timetextposition ~= "right" then
-				self.Text:SetWidth(db.w)
+				self.Text:SetWidth(castbarwidth)
 			else
-				self.Text:SetWidth(db.w - normaltimewidth - 5)
+				self.Text:SetWidth(castbarwidth - normaltimewidth - 5)
 			end
 		elseif position == "center" then
 			self.Text:SetPoint("CENTER", self.Bar, "CENTER", db.nametextx, db.nametexty)
+			self.Text:SetJustifyH("CENTER")
+		elseif position == "centerback" then
+			self.Text:SetPoint("CENTER", self, "CENTER", db.nametextx, db.nametexty)
 			self.Text:SetJustifyH("CENTER")
 		else -- L["Right"]
 			self.Text:SetPoint("RIGHT", self.Bar, "RIGHT", -1 * db.nametextx, db.nametexty)
 			self.Text:SetJustifyH("RIGHT")
 			if db.hidetimetext or db.timetextposition ~= "left" then
-				self.Text:SetWidth(db.w)
+				self.Text:SetWidth(castbarwidth)
 			else
-				self.Text:SetWidth(db.w - normaltimewidth - 5)
+				self.Text:SetWidth(castbarwidth - normaltimewidth - 5)
 			end
 		end
 	end
@@ -603,16 +636,18 @@ do
 	end
 
 	local function dragstop()
-		this.config.x = this:GetLeft()
-		this.config.y = this:GetBottom()
+		--this.config.x = this:GetLeft()
+		--this.config.y = this:GetBottom()
 		this:StopMovingOrSizing()
+		LibWindow.SavePosition(this)
 	end
 
 	local function nothing()
-		this:SetAlpha(this.config.alpha)
+		this:SetAlpha(this.config.alpha or 1.0)
 	end
 
 	function CastBarTemplate:Unlock()
+		self.Bar:SetValue(1)
 		self:Show()
 		self:EnableMouse(true)
 		self:SetScript("OnDragStart", dragstart)
@@ -687,9 +722,15 @@ do
 		local bar = getBar(info)
 		local scale = bar.config.scale
 		if v == "horizontal" then
-			bar.config.x = (UIParent:GetWidth() / 2 - (bar.config.w * scale) / 2) / scale
+			bar.config.point = gsub(gsub(bar.config.point,"LEFT", ""),"RIGHT", "")
+			if bar.config.point == "" then bar.config.point = "CENTER" end
+			bar.config.x = 0
+			--bar.config.x = (UIParent:GetWidth() / 2 - (bar.config.w * scale) / 2) / scale
 		else -- L["Vertical"]
-			bar.config.y = (UIParent:GetHeight() / 2 - (bar.config.h * scale) / 2) / scale
+			bar.config.point = gsub(gsub(bar.config.point, "TOP", ""),"BOTTOM", "")
+			if bar.config.point == "" then bar.config.point = "CENTER" end
+			bar.config.y = 0
+			--bar.config.y = (UIParent:GetHeight() / 2 - (bar.config.h * scale) / 2) / scale
 		end
 		bar:ApplySettings()
 	end
@@ -746,11 +787,9 @@ do
 					order = 99,
 					width = "full",
 				},
-				h = {
-					type = "range",
-					name = L["Height"],
-					desc = L["Height"],
-					min = 10, max = 50, step = 1,
+				nlstart = {
+					type = "description",
+					name = "",
 					order = 200,
 				},
 				w = {
@@ -758,27 +797,20 @@ do
 					name = L["Width"],
 					desc = L["Width"],
 					min = 50, max = 1500, bigStep = 5,
-					order = 200,
+					order = 200.1,
 				},
-				x = {
+				h = {
 					type = "range",
-					name = L["X"],
-					desc = L["Set an exact X value for this bar's position."],
-					min = -2560, max = 2560, bigStep = 1,
-					order = 200,
-				},
-				y = {
-					type = "range",
-					name = L["Y"],
-					desc = L["Set an exact Y value for this bar's position."],
-					min = -1600, max = 1600, bigStep = 1,
-					order = 200,
+					name = L["Height"],
+					desc = L["Height"],
+					min = 10, max = 50, step = 1,
+					order = 200.2,
 				},
 				scale = {
 					type = "range",
 					name = L["Scale"],
 					desc = L["Scale"],
-					min = 0.2, max = 1, bigStep = 0.025,
+					min = 0.2, max = 1.5, bigStep = 0.025,
 					order = 201,
 				},
 				alpha = {
@@ -788,6 +820,49 @@ do
 					isPercent = true,
 					min = 0.1, max = 1, bigStep = 0.025,
 					order = 202,
+				},
+				x = {
+					type = "range",
+					name = L["X"],
+					desc = L["Set an exact X value for this bar's position."],
+					min = -2560, max = 2560, bigStep = 1,
+					order = 203,
+				},
+				y = {
+					type = "range",
+					name = L["Y"],
+					desc = L["Set an exact Y value for this bar's position."],
+					min = -1600, max = 1600, bigStep = 1,
+					order = 204,
+				},
+				point = {
+					type = "select",
+					name = L["Anchor point"],
+					values = {
+						["TOP"] = L["Top"],
+						["RIGHT"] = L["Right"],
+						["BOTTOM"] = L["Bottom"],
+						["LEFT"] = L["Left"],
+						["TOPRIGHT"] = L["Top Right"],
+						["TOPLEFT"] = L["Top Left"],
+						["BOTTOMLEFT"] = L["Bottom Left"],
+						["BOTTOMRIGHT"] = L["Bottom Right"],
+						["CENTER"] = L["Center"]
+					},
+					order = 205,
+				},
+				strata = {
+					type = "select",
+					name = L["Strata"],
+					desc = L["Set the bar in front of or behind other UI elements."],
+					values = {
+						["BACKGROUND"] = L["BACKGROUND"],
+						["LOW"] = L["LOW"],
+						["MEDIUM"] = L["MEDIUM"],
+						["HIGH"] = L["HIGH"],
+						["DIALOG"] = L["DIALOG"],
+					},
+					order = 206,
 				},
 				icon = {
 					type = "header",
@@ -849,16 +924,11 @@ do
 					desc = L["Disable the text that displays the spell name/rank"],
 					order = 401,
 				},
-				nlname = {
-					type = "description",
-					name = "",
-					order = 403,
-				},
 				nametextposition = {
 					type = "select",
 					name = L["Spell Name Position"],
 					desc = L["Set the alignment of the spell name text"],
-					values = {["left"] = L["Left"], ["right"] = L["Right"], ["center"] = L["Center"]},
+					values = {["left"] = L["Left"], ["right"] = L["Right"], ["center"] = L["Center (CastBar)"], ["centerback"] = L["Center (Backdrop)"]},
 					disabled = hidenametextoptions,
 					order = 404,
 				},
@@ -885,6 +955,11 @@ do
 					min = -35, max = 35, step = 1,
 					disabled = hidenametextoptions,
 					order = 407,
+				},
+				nltimetext = {
+					type = "description",
+					name = "",
+					order = 410,
 				},
 				spellrank = {
 					type = "toggle",
@@ -914,6 +989,14 @@ do
 					disabled = hidetimetextoptions,
 					order = 412,
 				},
+				timetextposition = {
+					type = "select",
+					name = L["Time Text Position"],
+					desc = L["Set the alignment of the time text"],
+					values = {["left"] = L["Left"], ["right"] = L["Right"], ["center"] = L["Center (CastBar)"], ["centerback"] = L["Center (Backdrop)"], ["caststart"] = L["Cast Start Side"], ["castend"] = L["Cast End Side"]},
+					disabled = hidetimetextoptions,
+					order = 413,
+				},
 				timefontsize = {
 					type = "range",
 					name = L["Time Font Size"],
@@ -921,14 +1004,6 @@ do
 					min = 7, max = 20, step = 1,
 					order = 414,
 					disabled = hidetimetextoptions,
-				},
-				timetextposition = {
-					type = "select",
-					name = L["Time Text Position"],
-					desc = L["Set the alignment of the time text"],
-					values = {["left"] = L["Left"], ["right"] = L["Right"], ["center"] = L["Center"], ["caststart"] = L["Cast Start Side"], ["castend"] = L["Cast End Side"]},
-					disabled = hidetimetextoptions,
-					order = 415,
 				},
 				timetextx = {
 					type = "range",
@@ -945,6 +1020,13 @@ do
 					min = -35, max = 35, step = 1,
 					disabled = hidetimetextoptions,
 					order = 417,
+				},
+				casttimecountup = {
+					type = "toggle",
+					name = L["Cast Time Count Up"],
+					desc = L["Count up from zero instead of down from the cast duration"],
+					disabled = hidetimetextoptions,
+					order = 418,
 				},
 				textureheader = {
 					type = "header",
@@ -1062,6 +1144,8 @@ Quartz3.CastBarTemplate = {}
 Quartz3.CastBarTemplate.defaults = {
 	--x =  -- applied automatically in applySettings()
 	y = 180,
+	point = "BOTTOMLEFT",
+	strata = "MEDIUM",
 	h = 25,
 	w = 250,
 	scale = 1,
@@ -1070,7 +1154,7 @@ Quartz3.CastBarTemplate.defaults = {
 	alpha = 1,
 	iconalpha = 0.9,
 	iconposition = "left",
-	icongap = 4,
+	icongap = 1,
 	hidenametext = false,
 	nametextposition = "left",
 	timetextposition = "right",
@@ -1103,14 +1187,14 @@ function Quartz3.CastBarTemplate:new(parent, unit, name, localizedName, config)
 	local bar = setmetatable(CreateFrame("Frame", frameName, UIParent), CastBarTemplate_MT)
 	bar.unit = unit
 	bar.parent = parent
-	bar.config = config
 	bar.modName = name
 	bar.localizedName = localizedName
 	bar.locked = true
 
+	bar:SetConfig(config)
+
 	Quartz3.CastBarTemplate.bars[name] = bar
 
-	bar:SetFrameStrata("MEDIUM")
 	bar:SetScript("OnShow", OnShow)
 	bar:SetScript("OnHide", OnHide)
 	bar:SetScript("OnUpdate", OnUpdate)
@@ -1119,10 +1203,10 @@ function Quartz3.CastBarTemplate:new(parent, unit, name, localizedName, config)
 	bar:RegisterForDrag("LeftButton")
 	bar:SetClampedToScreen(true)
 
-	bar.Bar      = CreateFrame("StatusBar", nil, bar)
+	bar.Bar      =   Quartz3:CreateStatusBar(nil, bar) -- CreateFrame("StatusBar", nil, bar) --
 	bar.Text     = bar.Bar:CreateFontString(nil, "OVERLAY")
 	bar.TimeText = bar.Bar:CreateFontString(nil, "OVERLAY")
-	bar.Icon     = bar.Bar:CreateTexture(nil, "DIALOG")
+	bar.Icon     = bar.Bar:CreateTexture(nil, "ARTWORK")
 	bar.Spark    = bar.Bar:CreateTexture(nil, "OVERLAY")
 	if unit ~= "player" then
 		bar.Shield = bar.Bar:CreateTexture(nil, "ARTWORK")

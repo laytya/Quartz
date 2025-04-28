@@ -9,6 +9,7 @@ debug = true
 
 local L = LibStub("AceLocale-3.0"):NewLocale("Quartz3", "enUS", true, debug)
 
+L["%s on %s"] =  true
 L["15 seconds"] = true
 L["1 minute"] = true
 L["30 seconds"] = true

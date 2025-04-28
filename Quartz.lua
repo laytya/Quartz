@@ -25,7 +25,7 @@ local db
 -- Upvalues
 -- GLOBALS: LibStub, QuartzDB
 local type, pairs, tonumber = type, pairs, tonumber
-local mod,format = math.mod,string.format
+local mod,format,find = math.mod,string.format, string.find
 local defaults = {
 	profile = {
 		modules = { 
@@ -269,7 +269,8 @@ do
 	}
 	function Quartz3.Util.ConvertRankToRomanNumeral(rank, style)
 		local mask, arg = nil, nil
-		local number = tonumber(rank:match(L["Rank (%d+)"]))
+		local _, _, number = find(rank, L["Rank (%d+)"])
+		number = tonumber(number)
 		if number and number > 0 then
 			if style == "number" then
 				mask, arg = "%s %d", number

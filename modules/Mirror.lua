@@ -226,7 +226,7 @@ local function OnHide()
 end
 local mirrorbars = setmetatable({}, {
 	__index = function(t,k)
-		local bar = CreateFrame("StatusBar", nil, UIParent)
+		local bar =  Quartz3:CreateStatusBar(nil, UIParent) -- CreateFrame("StatusBar", nil, UIParent) --
 		t[k] = bar
 		bar:SetFrameStrata("MEDIUM")
 		bar:Hide()
@@ -875,6 +875,8 @@ do
 										mirrorbars[1]:SetScript("OnDragStop", nil)
 										Mirror:UpdateBars()
 									else
+										mirrorbars[1]:SetMinMaxValues(0,1)
+										mirrorbars[1]:SetValue(1)
 										mirrorbars[1]:Show()
 										mirrorbars[1]:EnableMouse(true)
 										mirrorbars[1]:SetScript("OnDragStart", dragstart)

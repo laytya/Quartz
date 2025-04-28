@@ -36,7 +36,7 @@ local COMBATLOG_FILTER_ME = COMBATLOG_FILTER_ME
 local getn, format = table.getn, string.format
 local UnitIsUnit = UnitIsUnit
 
-local playerGuid
+
 local autoshotname = SpellInfo(75)
 local slam = SpellInfo(1464)
 local swordprocname = SpellInfo(12281) --??
@@ -278,7 +278,7 @@ function Swing:OnEnable()
 				swingbar[i]:RegisterForDrag("LeftButton")
 				swingbar[i]:SetClampedToScreen(true)
 	end
-			swingbar[i].swingstatusbar = CreateFrame("StatusBar", nil, swingbar[i])
+			swingbar[i].swingstatusbar = CreateFrame("StatusBar", nil, swingbar[i]) --Quartz3:CreateStatusBar(nil, swingbar[i]) -- 
 	
 			swingbar[i].durationtext = swingbar[i].swingstatusbar:CreateFontString(nil, "OVERLAY")
 			swingbar[i].remainingtext = swingbar[i].swingstatusbar:CreateFontString(nil, "OVERLAY")

@@ -1,5 +1,6 @@
 # Quartz 
 Is a modular approach to a casting bar addon. An overview of (hopefully most of) the modules:
+![image](https://github.com/user-attachments/assets/5a13dcfc-7390-4ce6-a86b-8fa2e3f9d374)
 
 ## Player
 
@@ -31,6 +32,12 @@ Displays a swing timer for your melee weapon as well as hunter autoshot.
 
 ## Timer
 Allows for creating custom timers displayed on the mirror bars. 
+Usage:  
+Start timer - 
+**/quartztimer timername 60** or **/quartztimer 60 timername**
+or  **/qt timername 60** or **/qt 60 timername**
+
+Kill timer - **/quartztimer kill timername** or **/qt kill timername**
 
 ## Tradeskill Merge
 Merges multiple casts of the same tradeskill item into one big cast bar. 

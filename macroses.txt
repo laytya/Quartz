@@ -1,0 +1,11 @@
+If you have a more robust start attack method, such as roids `/startattack` use that in place of `/run if not PlayerFrame.inCombat then AttackTarget() end`  
+
+Slam:
+/run -- CastSpellByName("Slam")
+/run if not PlayerFrame.inCombat then AttackTarget() end
+/run if st_timer>UnitAttackSpeed"player"*0.9 then CastSpellByName("Slam") end
+
+Heroic Strike dequeue:
+/run -- CastSpellByName("Heroic Strike")
+/run if not PlayerFrame.inCombat then AttackTarget() end
+/run if st_timer and st_timer < (UnitAttackSpeed("player") * 0.2) then SpellStopCasting() else CastSpellByName("Heroic Strike") end

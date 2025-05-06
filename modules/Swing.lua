@@ -45,6 +45,7 @@ local resetspells
 local resetautoshotspells = {
 	--[GetSpellInfo(19434)] = true, -- Aimed Shot
 }
+st_timer = getglobal("st_timer") or 0
 
 local swingbar, swingbar_width, swingstatusbar, remainingtext, durationtext, combat
 swingbar = {}
@@ -231,7 +232,9 @@ local function OnUpdate()
 		end
 		this.elapsed = 0 
 	end
-
+	if slot == MAINHAND then
+		st_timer = timer[slot]
+	end
 end
 
 local function OnHide()

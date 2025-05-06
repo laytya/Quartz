@@ -36,7 +36,7 @@ local UnitIsUnit = UnitIsUnit
 local lagbox, lagtext, db, timeDiff, sendTime, alignoutside
 timeDiff = 0
 local getOptions
-
+local dontCatch = false
 local defaults = {
 	profile = {
 		lagcolor = {1, 0, 0},
@@ -79,6 +79,7 @@ function Latency:OnEnable()
 	self:SecureHook("UseContainerItem")
 	self:SecureHook("UseInventoryItem")
 	self:SecureHook("DoTradeSkill")
+	self:SecureHook("DoCraft")
 	self:HookScript(WorldFrame, "OnMouseDown", 'WorldFrame_OnMouseDown')
 
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)
@@ -103,30 +104,42 @@ end
 
 function Latency:CastSpellByName(pass, onSelf)
 	sendTime = GetTime()	
+	dontCatch = false
 end
 
 function Latency:CastSpell(pass, onSelf)
 	sendTime = GetTime()	
+	dontCatch = false
 end
 
 function Latency:UseAction(pass, cursor, onSelf)
 	sendTime = GetTime()	
+	dontCatch = false
 end
 
 function Latency:UseContainerItem(id, index)
 	sendTime = GetTime()
+	dontCatch = false
 end
 
 function Latency:UseInventoryItem(id, index)
 	sendTime = GetTime()
+	dontCatch = false
 end
 
 function Latency:DoTradeSkill(id, index)
 	sendTime = GetTime()
+	dontCatch = false
+end
+
+function Latency:DoCraft(id, index)
+	sendTime = GetTime()
+	dontCatch = true
 end
 
 function Latency:WorldFrame_OnMouseDown()
 	sendTime = GetTime()
+	dontCatch = false
 end
 
 local gatherSpells = {
@@ -149,7 +162,7 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 	if gatherSpells[spell.id] then return end -- Open world object
 
 	local startTime, endTime = bar.startTime, bar.endTime
-	if not sendTime or not endTime then return end
+	if not sendTime or not endTime or dontCatch then return end
 	
 	timeDiff = GetTime() - sendTime
 	local castlength = endTime - startTime

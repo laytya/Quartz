@@ -60,6 +60,7 @@ local defaults = {
 	},
 }
 
+media:Register("statusbar", "Blank", "Interface\\BUTTONS\\WHITE8X8")
 media:Register("statusbar", "BantoBar", "Interface\\Addons\\Quartz\\textures\\BantoBar")
 media:Register("statusbar", "Frost", "Interface\\AddOns\\Quartz\\textures\\Frost")
 media:Register("statusbar", "Healbot", "Interface\\AddOns\\Quartz\\textures\\Healbot")

@@ -55,7 +55,7 @@ local function tradeskillOnUpdate()
 		
 		local perc = (currentTime - starttime) / duration
 		castBarSpark:ClearAllPoints()
-		castBarSpark:SetPoint("CENTER", castBar, "LEFT", perc * Player.db.profile.w, 0)
+		castBarSpark:SetPoint("CENTER", castBar, "LEFT", perc * Player.Bar:GetWidth(), 0)
 		
 		if Player.db.profile.hidecasttime then
 			castBarTimeText:SetText(format(TimeFmt(totaltime - elapsed)))

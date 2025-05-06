@@ -139,7 +139,7 @@ function lib.SavePosition(frame)
 	local left,top = frame:GetLeft()*s, frame:GetTop()*s
 	local right,bottom = frame:GetRight()*s, frame:GetBottom()*s
 	local pwidth, pheight = parent:GetWidth()/sp, parent:GetHeight()/sp
-	printT({s=s,left=left,top=top,right=right,bottom=bottom,pwidth=pwidth, pheight= pheight})
+	--printT({s=s,left=left,top=top,right=right,bottom=bottom,pwidth=pwidth, pheight= pheight})
 	local x,y,point;
 	if left < (pwidth-right) and left < abs((left+right)/2 - pwidth/2) then
 		x = left;
@@ -174,7 +174,7 @@ function lib.SavePosition(frame)
 
 	frame:ClearAllPoints()
 	frame:SetPoint(point, frame:GetParent(), point, x/s, y/s);
-	printT({point=point,x=x,y=y})
+	--printT({point=point,x=x,y=y})
 end
 
 

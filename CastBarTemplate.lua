@@ -202,8 +202,8 @@ function CastBarTemplate:UNIT_CASTEVENT()
 	local caster, target, eventType, spellId, start, duration = arg1, arg2, arg3, arg4, GetTime(), arg5 / 1000
   
 	local unit, event = caster, ""
-	if UnitIsUnit(unit, "player") then
-		--print(caster, target, eventType, spellId, start, duration)
+	if UnitIsUnit(unit, "player")  and self.unit == "player" then
+	--	print(caster, target, eventType, spellId, start, duration)
 	end
 	if eventType == "START" then
 		event = "UNIT_SPELLCAST_START"

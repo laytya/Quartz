@@ -94,6 +94,27 @@ function Player:OnInitialize()
 	
 end
 
+local slots = {
+	["Head"] = true,
+	["Neck"] = true,
+	["Shoulder"] = true,
+	["Shirt"] = true,
+	["Chest"] = true,
+	["Waist"] = true,
+	["Legs"] = true,
+	["Feet"] = true,
+	["Wrist"] = true,
+	["Hands"] = true,
+	["Finger0"] = true,
+	["Finger1"] = true,
+	["Trinket0"] = true,
+	["Trinket1"] = true,
+	["Back"] = true,
+	["MainHand"] = true,
+	["SecondaryHand"] = true,
+	["Ranged"] = true,
+	["Tabard"] = true,
+}
 
 function Player:OnEnable()
 	self.Bar:RegisterEvents()
@@ -113,12 +134,15 @@ function Player:OnEnable()
 		--[SpellInfo(47540)] = 2, -- penance
 		-- mage
 		[SpellInfo(5143)] = 5, -- arcane missiles
-		["T3" .. SpellInfo(5143)] = 6, -- t3 waist arcane missiles
 		[SpellInfo(10)] = 5, -- blizzard
 		[SpellInfo(12051)] = 4, -- evocation
+		[SpellInfo(52516)] = 5, -- Icicles (52500)
 		-- hunter
 		[SpellInfo(1510)] = 6, -- volley
 	} 
+	for s in pairs(slots) do
+		slots[s] = GetInventorySlotInfo (s.."Slot")
+	end
 end
 
 function Player:OnDisable()
@@ -189,12 +213,15 @@ local barticks = setmetatable({}, sparkfactory)
 
 local function setBarTicks(ticknum)
 	if( ticknum and ticknum > 0) then
-		local delta = ( db.w / ticknum )
+		local delta = ( castBar:GetWidth() / ticknum )
 		for k = 1,ticknum do
 			local t = barticks[k]
 			t:ClearAllPoints()
 			t:SetPoint("CENTER", castBar, "LEFT", delta * k, 0 )
 			t:Show()
+		end
+		for k = ticknum+1,getn(barticks) do
+			barticks[k]:Hide()
 		end
 	else
 		barticks[1].Hide = nil
@@ -203,6 +230,32 @@ local function setBarTicks(ticknum)
 		end
 	end
 end
+local spellTimeDecreases = {
+	[23723] = 1.33,   --  MGQ
+	--[26635] = 1.1,  -- Troll Race
+	[12042] = 1.3,		-- AP
+  [45425] = 1.05,		-- Hast pot
+    
+}
+
+
+local function getTrollBerserkHaste(unit)
+    local perc = UnitHealth(unit)/UnitHealthMax(unit)
+    local speed = min((1.3 - perc)/3, .15) + 1
+    return speed
+end
+local function getSpelldHaste(unit)
+    local positiveMul = 1
+    for i=1, 100 do
+        local tex, _, spellID = UnitBuff(unit, i)
+        if not tex then return positiveMul end
+        if spellTimeDecreases[spellID] or spellID == 26635 then
+            positiveMul = positiveMul * (spellTimeDecreases[spellID] or getTrollBerserkHaste(unit))
+        end
+    end
+    return positiveMul
+end
+
 local function checkMageT3Waist()
 	local link = GetInventoryItemLink("player", 6)
 	local _, _, link = string.find(link, "|c%x+|H(item:%d+:%d+:%d+:%d+)|h%[.-%]|h|r")
@@ -211,12 +264,43 @@ local function checkMageT3Waist()
 	return found ~= nil
 end
 
+local function getHasteFromItems(unit)
+	local haste = 1
+	for slot, id in pairs(slots) do
+		local link = GetInventoryItemLink(unit, id)
+		if link then
+			local _, _, link = string.find(link, "|c%x+|H(item:%d+:%d+:%d+:%d+)|h%[.-%]|h|r")
+			Gratuity:SetHyperlink(link)
+  		local found, _, h = Gratuity:Find("Increases your attack and casting speed by (%d+)%%.",5,20,false,true,false)	
+			if found then
+				haste = haste + (tonumber(h) or 0) / 100
+				print(slot,h)
+			end
+			local found, _, h = Gratuity:Find("%+(%d+)%% Haste",5,20,false,true,false)
+			if found then
+				haste = haste + (tonumber(h) or 0) / 100
+				print(slot,h)
+			end
+		end
+	end
+	return haste
+end
+
+local function checkPlayerBuff(spellId)
+	for i = 1, 100 do
+		local _, _, id = UnitBuff("player", i)
+		if spellId == id then
+			return true
+		end
+	end
+end
+
 local function getChannelingTicks(spell)
 	if not db.showticks then
 		return 0
 	end
-	if spell == SpellInfo(5143) and checkMageT3Waist() then  -- Arcane Missiles
-		spell = "T3" .. spell
+	if spell == SpellInfo(5143) and checkMageT3Waist() then  -- Arcane Missiles -- t3 waist arcane missiles
+		return 6
 	end
 	return channelingTicks[spell] or 0
 end
@@ -229,6 +313,16 @@ function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 		local spell = SpellInfo(spell.id)
 		bar.channelingTicks = getChannelingTicks(spell)
 		setBarTicks(bar.channelingTicks)
+		local duration = self.Bar.endTime - self.Bar.startTime
+		local haste = getSpelldHaste("player")
+		if spell == SpellInfo(52516) and checkPlayerBuff(52500) then -- Flash Freeze
+			duration = duration * 0.2
+		elseif spell == SpellInfo(5143) and checkMageT3Waist() then
+			duration = duration + 1
+		end
+		haste = haste * getHasteFromItems("player")
+		print(duration, haste)
+		self.Bar.endTime = self.Bar.startTime + duration/haste
 	else
 		setBarTicks(0)
 	end

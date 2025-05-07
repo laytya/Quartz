@@ -274,12 +274,12 @@ local function getHasteFromItems(unit)
   		local found, _, h = Gratuity:Find("Increases your attack and casting speed by (%d+)%%.",5,20,false,true,false)	
 			if found then
 				haste = haste + (tonumber(h) or 0) / 100
-				print(slot,h)
+				--print(slot,h)
 			end
 			local found, _, h = Gratuity:Find("%+(%d+)%% Haste",5,20,false,true,false)
 			if found then
 				haste = haste + (tonumber(h) or 0) / 100
-				print(slot,h)
+				--print(slot,h)
 			end
 		end
 	end
@@ -321,7 +321,7 @@ function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 			duration = duration + 1
 		end
 		haste = haste * getHasteFromItems("player")
-		print(duration, haste)
+		--print(duration, haste)
 		self.Bar.endTime = self.Bar.startTime + duration/haste
 	else
 		setBarTicks(0)

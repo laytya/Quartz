@@ -29,7 +29,8 @@ local min, type, format, unpack, setmetatable = math.min, type, string.format, u
 local CreateFrame, GetTime, UIParent = CreateFrame, GetTime, UIParent
 local UnitName, UnitCastingInfo, UnitChannelInfo = UnitName, UnitCastingInfo, UnitChannelInfo
 local getn, gsub = table.getn, string.gsub
-local UnitIsUnit = UnitIsUnit
+local UnitIsUnit = function(unit, target) if unit == "focus" or target == "focus" then return false end
+	return UnitIsUnit(unit, target) end
 
 local CastBarTemplate = CreateFrame("Frame")
 local CastBarTemplate_MT = {__index = CastBarTemplate}

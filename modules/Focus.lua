@@ -20,7 +20,7 @@ local Quartz3 = LibStub("AceAddon-3.0"):GetAddon("Quartz3")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
 
 local MODNAME = "Focus"
-local Focus = Quartz3:NewModule(MODNAME, "AceEvent-3.0")
+local Focus = Quartz3:NewModule(MODNAME, "AceEvent-3.0", "AceHook-3.0")
 
 ----------------------------
 -- Upvalues
@@ -83,11 +83,14 @@ end
 
 function Focus:OnEnable()
 	self.Bar:RegisterEvents()
-	self.Bar:RegisterEvent("PLAYER_TARGET_CHANGED")
-	self.Bar:RegisterEvent("PLAYER_FOCUS_CHANGED")
-	self.Bar.PLAYER_TARGET_CHANGED = self.Bar.UpdateUnit
-	self.Bar.PLAYER_FOCUS_CHANGED = self.Bar.UpdateUnit
+	--self.Bar:RegisterEvent("PLAYER_TARGET_CHANGED")
+	--self.Bar:RegisterEvent("PLAYER_FOCUS_CHANGED")
+	--self.Bar.PLAYER_TARGET_CHANGED = self.Bar.UpdateUnit
+	--self.Bar.PLAYER_FOCUS_CHANGED = self.Bar.UpdateUnit
 	self.lastNotInterruptible = false
+	if ModernFocusFrame then
+		self:SecureHook(ModernFocusFrame, "UpdateModernFocusFrame", "UpdateFocus")
+	end
 	self:ApplySettings()
 end
 
@@ -101,6 +104,16 @@ function Focus:PreShowCondition(bar, unit)
 	   (not db.showhostile and UnitIsEnemy("player", unit)) or
 	   (not db.showtarget and UnitIsUnit("target", unit)) then
 		return true
+	end
+end
+
+function Focus:UpdateFocus()
+
+	if ModernFocusFrame then
+		if self.Bar.unit ~= ModernFocusFrame.focusGUID then
+			self.Bar.unit = ModernFocusFrame.focusGUID
+			self.Bar:UpdateUnit()
+		end
 	end
 end
 

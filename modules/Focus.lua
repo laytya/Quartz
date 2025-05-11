@@ -20,7 +20,7 @@ local Quartz3 = LibStub("AceAddon-3.0"):GetAddon("Quartz3")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
 
 local MODNAME = "Focus"
-local Focus = Quartz3:NewModule(MODNAME, "AceEvent-3.0", "AceHook-3.0")
+local Focus = Quartz3:NewModule(MODNAME, "AceEvent-3.0", "AceHook-3.0", "AceTimer-3.0")
 
 ----------------------------
 -- Upvalues
@@ -91,11 +91,16 @@ function Focus:OnEnable()
 	if ModernFocusFrame then
 		self:SecureHook(ModernFocusFrame, "UpdateModernFocusFrame", "UpdateFocus")
 	end
+	if pfUI and pfUI.uf and pfUI.uf.focus then
+		self.PFUIFocusTimer = self:ScheduleRepeatingTimer("UpdatePUIFocus", 0.3)	
+	end  
+	
 	self:ApplySettings()
 end
 
 function Focus:OnDisable()
 	self.Bar:UnregisterEvents()
+	self:CancelAllTimers()
 	self.Bar:Hide()
 end
 
@@ -112,6 +117,15 @@ function Focus:UpdateFocus()
 	if ModernFocusFrame then
 		if self.Bar.unit ~= ModernFocusFrame.focusGUID then
 			self.Bar.unit = ModernFocusFrame.focusGUID
+			self.Bar:UpdateUnit()
+		end
+	end
+end
+
+function Focus:UpdatePUIFocus()
+	if pfUI and pfUI.uf and pfUI.uf.focus then
+		if self.Bar.unit ~= pfUI.uf.focus.label then
+			self.Bar.unit = pfUI.uf.focus.label
 			self.Bar:UpdateUnit()
 		end
 	end

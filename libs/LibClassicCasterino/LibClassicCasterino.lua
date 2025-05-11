@@ -1,6 +1,7 @@
 --[================[
 --LibClassicCasterino
 --Author: d87
+--Ported to vanilla: LaYt
 --]================]
 local MAJOR, MINOR = "LibClassicCasterino", 37
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
@@ -65,11 +66,11 @@ local refreshCastTable = function(tbl, ...)
 end
 
 local makeCastUID = function(guid, spellName)
-    local npcID = guid or "Unknown"
-    return npcID..spellName
+    return (guid or "Unknown")..spellName
 end
 
 local function CastStart(srcGUID, castType, spellID, overrideCastTime )
+    --printT({"Start",srcGUID, castType, spellID, overrideCastTime})
     local spellName,rank,icon = GetSpellInfo(spellID)
    --[[ if castType == "CAST" then
         local knownCastDuration = classCasts[spellID]
@@ -82,6 +83,8 @@ local function CastStart(srcGUID, castType, spellID, overrideCastTime )
         castTime = channelDuration*1000
     end
     ]]
+    --local castTime = overrideCastTime
+   --[[
     local decreased = talentDecreased[spellID]
     if decreased then
         castTime = castTime - decreased*1000
@@ -89,9 +92,10 @@ local function CastStart(srcGUID, castType, spellID, overrideCastTime )
     if overrideCastTime then
         castTime = overrideCastTime
     end
+   ]]
     local now = GetTime()*1000
     local startTime = now
-    local endTime = now + castTime
+    local endTime = now + overrideCastTime
     local currentCast = casters[srcGUID]
 
     if currentCast then
@@ -108,28 +112,27 @@ local function CastStart(srcGUID, castType, spellID, overrideCastTime )
     end
 ]]
     if castType == "CAST" then
-        FireToUnits("UNIT_SPELLCAST_START", srcGUID)
+        FireToUnits("UNIT_SPELLCAST_START", srcGUID, makeCastUID(srcGUID, spellName), spellID)
     else
-        FireToUnits("UNIT_SPELLCAST_CHANNEL_START", srcGUID)
+        FireToUnits("UNIT_SPELLCAST_CHANNEL_START", srcGUID, makeCastUID(srcGUID, spellName), spellID)
     end
 end
 
 local function CastStop(srcGUID, spellID, suffix, suffix2 )
     local currentCast = casters[srcGUID]
     if currentCast then
-
+        --printT({"Stop", srcGUID, spellID, suffix, suffix2})
         casters[srcGUID] = nil
         movecheckGUIDs[srcGUID] = nil
-
+        if not spellID then spellID = currentCast[6] end
+        local spellName = GetSpellInfo(spellID)
         if currentCast[1] == "CAST" then
-            local event = "UNIT_SPELLCAST_"..suffix
-
-            FireToUnits(event, srcGUID)
+            FireToUnits("UNIT_SPELLCAST_"..suffix, srcGUID)
             if suffix2 then
-                FireToUnits("UNIT_SPELLCAST_"..suffix2, srcGUID)
+                FireToUnits("UNIT_SPELLCAST_"..suffix2, srcGUID, makeCastUID(srcGUID, spellName), spellID)
             end
         else
-            FireToUnits("UNIT_SPELLCAST_CHANNEL_STOP", srcGUID)
+            FireToUnits("UNIT_SPELLCAST_CHANNEL_STOP", srcGUID, makeCastUID(srcGUID, spellName), spellID)
         end
     end
 end
@@ -145,12 +148,11 @@ function f:UNIT_CASTEVENT(srcGUID, dstGUID, eventType, spellID, duration)
         local currentCast = casters[srcGUID]
         if currentCast and currentCast[6] == spellID then
 		    CastStop(srcGUID, spellID, "SUCCEEDED", "STOP")
-            return
         end
         local spellName = GetSpellInfo(spellID)
+        -- print(spellName,spellID,crowdControlAuras[spellName])
         if crowdControlAuras[spellName] then
             CastStop(dstGUID, nil, "INTERRUPTED", "STOP")
-            return
         end
 	end
 end
@@ -359,13 +361,12 @@ function lib:UnitChannelInfo(unit)
     end
 end
 
---[[
-local Passthrough = function(self, event, unit, ...)
-    if unit == "player" or UnitIsUnit(unit, "player") then
-        callbacks:Fire(event, unit, unpack(arg))
+
+local Passthrough = function()
+    --printT({"C",event,arg1,arg2,arg3,arg4,arg5})
+     --   callbacks:Fire(event, unit, unpack(arg))
     end
-end
-]]
+
 f.SPELLCAST_DELAYED = function()
     callbacks:Fire("UNIT_SPELLCAST_DELAYED", "player", arg1)
 end
@@ -374,13 +375,13 @@ f.SPELLCAST_CHANNEL_UPDATE = function()
     callbacks:Fire("UNIT_SPELLCAST_CHANNEL_UPDATE", "player", arg1)
 end
 
---f.UNIT_SPELLCAST_START = Passthrough
---f.UNIT_SPELLCAST_STOP = Passthrough
---f.UNIT_SPELLCAST_FAILED = Passthrough
---f.UNIT_SPELLCAST_INTERRUPTED = Passthrough
---f.UNIT_SPELLCAST_CHANNEL_START = Passthrough
---f.UNIT_SPELLCAST_CHANNEL_STOP = Passthrough
---f.UNIT_SPELLCAST_SUCCEEDED = Passthrough
+f.SPELLCAST_START = Passthrough
+f.SPELLCAST_STOP = Passthrough
+f.SPELLCAST_FAILED = Passthrough
+f.SPELLCAST_INTERRUPTED = Passthrough
+f.SPELLCAST_CHANNEL_START = Passthrough
+f.SPELLCAST_CHANNEL_STOP = Passthrough
+f.SPELLCAST_SUCCEEDED = Passthrough
 
 function callbacks.OnUsed()
 
@@ -392,12 +393,12 @@ function callbacks.OnUsed()
     
     f:RegisterEvent("SPELLCAST_DELAYED")
     f:RegisterEvent("SPELLCAST_CHANNEL_UPDATE")
-    --f:RegisterEvent("SPELLCAST_START")
-    --f:RegisterEvent("SPELLCAST_STOP")
-    --f:RegisterEvent("SPELLCAST_FAILED")
-    --f:RegisterEvent("SPELLCAST_INTERRUPTED")
-    --f:RegisterEvent("SPELLCAST_CHANNEL_START")
-     --f:RegisterEvent("SPELLCAST_CHANNEL_STOP")
+    f:RegisterEvent("SPELLCAST_START")
+    f:RegisterEvent("SPELLCAST_STOP")
+    f:RegisterEvent("SPELLCAST_FAILED")
+    f:RegisterEvent("SPELLCAST_INTERRUPTED")
+    f:RegisterEvent("SPELLCAST_CHANNEL_START")
+    f:RegisterEvent("SPELLCAST_CHANNEL_STOP")
 end
 
 function callbacks.OnUnused()
@@ -603,15 +604,7 @@ classChannelsByCast = {
 }
 
 
-for id in pairs(classCasts) do
-    spellNameToID[GetSpellInfo(id)] = id
-end
-for id in pairs(classChannelsByAura) do
-    spellNameToID[GetSpellInfo(id)] = id
-end
-for id in pairs(classChannelsByCast) do
-    spellNameToID[GetSpellInfo(id)] = id
-end
+
 
 local partyGUIDtoUnit = {}
 local raidGUIDtoUnit = {}
@@ -682,6 +675,7 @@ FireToUnits = function(event, guid, ...)
         callbacks:Fire(event, nameplateUnit, unpack(arg))
     end
 ]]
+    callbacks:Fire(event,getn(arg)+1, guid, unpack(arg))
 end
 
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -728,6 +722,7 @@ function f:PLAYER_ENTERING_WORLD()
         [GetSpellInfo(19503)] = true,      -- Scatter Shot
         [GetSpellInfo(605)] = true,        -- Mind Control
         [GetSpellInfo(7922)] = true,       -- Charge Stun
+        [GetSpellInfo(2139)] = true,       -- Counterspell
         [GetSpellInfo(18469)] = true,      -- Counterspell - Silenced
         [GetSpellInfo(15487)] = true,      -- Silence
         [GetSpellInfo(18425)] = true,      -- Kick - Silenced
@@ -758,6 +753,15 @@ function f:PLAYER_ENTERING_WORLD()
         [GetSpellInfo(56)] = true,         -- Stun (Weapon Proc)
         [GetSpellInfo(26108)] = true,      -- Glimpse of Madness
     }
+    for id in pairs(classCasts) do
+        spellNameToID[GetSpellInfo(id)] = id
+    end
+    for id in pairs(classChannelsByAura) do
+        spellNameToID[GetSpellInfo(id)] = id
+    end
+    for id in pairs(classChannelsByCast) do
+        spellNameToID[GetSpellInfo(id)] = id
+    end
 end
 
 --[[

@@ -30,7 +30,7 @@ local Player = Quartz3:NewModule(MODNAME)
 local unpack = unpack
 local getn = table.getn
 local UnitChannelInfo = UnitChannelInfo
-
+local playerClass
 local db, getOptions, castBar
 
 local defaults = {
@@ -116,6 +116,17 @@ local slots = {
 	["Tabard"] = true,
 }
 
+local talentIncrease ={
+	["MAGE"] = {
+		["arcane"] = {1, 15, 1.05},
+	}
+}
+
+local function isTalentKnown(x,y,k)
+	local _,_,_,_,tal = GetTalentInfo(x,y)
+	return tal * k
+end
+
 function Player:OnEnable()
 	self.Bar:RegisterEvents()
 	self:ApplySettings()
@@ -143,6 +154,9 @@ function Player:OnEnable()
 	for s in pairs(slots) do
 		slots[s] = GetInventorySlotInfo (s.."Slot")
 	end
+	local _
+	_, playerClass = UnitClass("player")
+
 end
 
 function Player:OnDisable()
@@ -244,6 +258,7 @@ local function getTrollBerserkHaste(unit)
     local speed = min((1.3 - perc)/3, .15) + 1
     return speed
 end
+
 local function getSpelldHaste(unit)
     local positiveMul = 1
     for i=1, 100 do
@@ -311,17 +326,21 @@ function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 	end
 	if bar.channeling then
 		local spell = SpellInfo(spell.id)
+		local calchaste = false
 		bar.channelingTicks = getChannelingTicks(spell)
 		setBarTicks(bar.channelingTicks)
 		local duration = self.Bar.endTime - self.Bar.startTime
-		local haste = getSpelldHaste("player")
+		local haste = 1 
 		if spell == SpellInfo(52516) and checkPlayerBuff(52500) then -- Flash Freeze
 			duration = duration * 0.2
-		elseif spell == SpellInfo(5143) and checkMageT3Waist() then
-			duration = duration + 1
+		elseif spell == SpellInfo(5143) then
+			if and checkMageT3Waist() then
+				duration = duration + 1
+			end
+			local k = isTalentKnown(1,15,1.05) -- Accelerated Arcana
+			haste = haste * getHasteFromItems("player") * getSpelldHaste("player") * (k > 0 and k or 1)
 		end
-		haste = haste * getHasteFromItems("player")
-		--print(duration, haste)
+		--print(duration, haste, duration/haste)
 		self.Bar.endTime = self.Bar.startTime + duration/haste
 	else
 		setBarTicks(0)

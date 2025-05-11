@@ -155,7 +155,7 @@ function Enemy:UNIT_CASTEVENT()
 	if db.instanceonly and not IsInInstance() then return end
 	--local timestamp, event, hideCaster, sGUID, sName, sFlags, sRaidFlags, dGUID, dName, dFlags, dRaidFlags, spellId, spellName = CombatLogGetCurrentEventInfo()
 	if UnitExists(caster) and (UnitIsFriend(caster, "player") 
-		or UnitIsUnit(caster, "target"))
+		or UnitIsUnit(caster, "target") or (Focus.Bar.unit and Focus.Bar.unit ~= "focus" and UnitIsUnit(caster, Focus.Bar.unit)))
 			-- or (not UnitIsPlayer(caster))
 	then
 		return

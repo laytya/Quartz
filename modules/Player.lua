@@ -334,7 +334,7 @@ function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 		if spell == SpellInfo(52516) and checkPlayerBuff(52500) then -- Flash Freeze
 			duration = duration * 0.2
 		elseif spell == SpellInfo(5143) then
-			if and checkMageT3Waist() then
+			if checkMageT3Waist() then
 				duration = duration + 1
 			end
 			local k = isTalentKnown(1,15,1.05) -- Accelerated Arcana

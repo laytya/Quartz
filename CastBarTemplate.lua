@@ -22,6 +22,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale("Quartz3")
 local LibWindow = LibStub("LibWindow-1.1")
 local media = LibStub("LibSharedMedia-3.0")
 local lsmlist = AceGUIWidgetLSMlists
+local lc = LibStub("LibClassicCasterino", true)
+
 
 ----------------------------
 -- Upvalues
@@ -43,6 +45,14 @@ local function call(obj, method, ...)
 	if type(obj.parent[method]) == "function" then
 		return obj.parent[method](obj.parent, obj, unpack(arg))
 	end
+end
+
+UnitCastingInfo = function(unit)
+	return lc:UnitCastingInfo(unit)
+end
+
+UnitChannelInfo = function(unit)
+	return lc:UnitChannelInfo(unit)
 end
 
 ----------------------------
@@ -419,7 +429,7 @@ function CastBarTemplate:SPELLCAST_CHANNEL_START(s,d)
 	--printT({event,s,d})
 end
 function CastBarTemplate:SPELLCAST_CHANNEL_STOP(s,d)
-	--print("SPELLCAST_CHANNEL_STOP")
+	--print("SPELLCAST_CHANNEL_STOP",GetTime())
 	self:UNIT_SPELLCAST_STOP("UNIT_SPELLCAST_CHANNEL_STOP", "player")
 end
 
@@ -441,13 +451,18 @@ end
 ]]
 
 function CastBarTemplate:UpdateUnit()
-	--[[if UnitCastingInfo(self.unit) then
-		self:UNIT_SPELLCAST_START("UNIT_SPELLCAST_START", self.unit)
-	elseif UnitChannelInfo(self.unit) then
-		self:UNIT_SPELLCAST_START("UNIT_SPELLCAST_CHANNEL_START", self.unit)
-	else]]
+	local spellName, _, icon, startTime, endTime, _,_,_,spellId =  UnitCastingInfo(self.unit)
+	
+	if spellName then
+		self:UNIT_SPELLCAST_START("UNIT_SPELLCAST_START", self.unit, {id = spellId, startTime = startTime/1000, endTime = endTime/1000})
+		return
+	end
+	spellName, _, icon, startTime, endTime, _,_,_,spellId =  UnitChannelInfo(self.unit)
+	if spellName then
+		self:UNIT_SPELLCAST_START("UNIT_SPELLCAST_CHANNEL_START", self.unit, {id = spellId, startTime = startTime/1000, endTime = endTime/1000})
+		return
+	end
 		self:Hide()
-	--end
 end
 
 function CastBarTemplate:SetConfig(config)
@@ -611,6 +626,21 @@ function CastBarTemplate:RegisterEvents()
 		self:RegisterEvent("SPELLCAST_CHANNEL_STOP")
 		self:RegisterEvent("SPELLCAST_CHANNEL_UPDATE")
 	end
+
+	local CastbarEventHandler = function(event, u, a, b, c, d)
+		--printT({"CEH", event, u, a, b, c, d})
+		return self[event](self, event, u, a, b, c, d)
+	end
+
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_START", CastbarEventHandler)
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_STOP", CastbarEventHandler)
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_FAILED", CastbarEventHandler)
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_DELAYED", CastbarEventHandler)
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_INTERRUPTED", CastbarEventHandler)
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_CHANNEL_START", CastbarEventHandler)
+	--lc.RegisterCallback(self, "UNIT_SPELLCAST_CHANNEL_UPDATE", CastbarEventHandler)
+	lc.RegisterCallback(self, "UNIT_SPELLCAST_CHANNEL_STOP", CastbarEventHandler)
+
 
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)
 		if mtype == "statusbar" then

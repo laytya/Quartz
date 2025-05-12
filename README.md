@@ -43,3 +43,9 @@ Kill timer - **/quartztimer kill timername** or **/qt kill timername**
 Merges multiple casts of the same tradeskill item into one big cast bar. 
 
 Use /q3 or /quartz to bring up the configuration menu.
+
+## SP_Swingtimer's **st_timer** emulation
+Added SP_Swingtimer's **st_timer** emulation. You can use it in your old macros w/out SP_Swingtimer loaded.
+
+## ⚠️ **IMPORTANT: SUPERWOW IS REQUIRED!** ⚠️  
+❌ **This addon WILL NOT WORK without [SuperWoW](https://github.com/balakethelock/SuperWoW/releases)!**  

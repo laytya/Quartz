@@ -55,7 +55,7 @@ local function tradeskillOnUpdate()
 		
 		local perc = (currentTime - starttime) / duration
 		castBarSpark:ClearAllPoints()
-		castBarSpark:SetPoint("CENTER", castBar, "LEFT", perc * Player.Bar:GetWidth(), 0)
+		castBarSpark:SetPoint("CENTER", castBar, "LEFT", perc * castBar:GetWidth(), 0)
 		
 		if Player.db.profile.hidecasttime then
 			castBarTimeText:SetText(format(TimeFmt(totaltime - elapsed)))
@@ -81,7 +81,7 @@ local function tradeskillOnUpdate()
 				tradeSkill = false
 			end
 			castBarSpark:ClearAllPoints()
-			castBarSpark:SetPoint("CENTER", castBar, "LEFT", Player.db.profile.w, 0)
+			castBarSpark:SetPoint("CENTER", castBar, "LEFT", castBar:GetWidth(), 0)
 			
 			if Player.db.profile.hidecasttime then
 				castBarTimeText:SetText(format(TimeFmt(totaltime - elapsed)))
@@ -152,6 +152,10 @@ function Tradeskill:UNIT_SPELLCAST_START(object, event, unit, spell)
 			castBarText:SetText(format("%s (%s)", displayName, numleft))
 		end
 		castBarSpark:Show()
+
+		if ((icon == "Interface\\Icons\\Temp" and Quartz3.db.profile.hidesamwise) or icon == nil) then
+			icon = "Interface\\Icons\\Trade_Engineering"
+		end
 		castBarIcon:SetTexture(icon)
 	else
 		castBar:SetMinMaxValues(0, 1)

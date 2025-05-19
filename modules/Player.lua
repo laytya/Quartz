@@ -32,6 +32,7 @@ local getn = table.getn
 local UnitChannelInfo = UnitChannelInfo
 local playerClass
 local db, getOptions, castBar
+local ICON_ENGI = "Interface\\Icons\\Trade_Engineering"
 
 local defaults = {
 	profile = Quartz3:Merge(Quartz3.CastBarTemplate.defaults,
@@ -323,6 +324,7 @@ end
 function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 	if spell.id == 22810 then 
 		self.Bar.Text:SetText("Opening...")
+		self.Bar.Icon:SetTexture(ICON_ENGI)
 	end
 	if bar.channeling then
 		local spell = SpellInfo(spell.id)

@@ -123,7 +123,7 @@ local function CastStop(srcGUID, spellID, suffix, suffix2 )
     if currentCast then
         --printT({"Stop", srcGUID, spellID, suffix, suffix2})
         casters[srcGUID] = nil
-        movecheckGUIDs[srcGUID] = nil
+        --movecheckGUIDs[srcGUID] = nil
         if not spellID then spellID = currentCast[6] end
         local spellName = GetSpellInfo(spellID)
         if currentCast[1] == "CAST" then
@@ -819,48 +819,21 @@ local interrupts = {
 -- Cast Interruption Checker
 ------------------------------
 
--- There's an issue that if you start a cast and immediately after cancel it, CAST_FAILED event won't ever come for it
--- This leads to zombie casts that have to run until completion
--- So for 4s after non-friendly player controlled guid started a cast we're watching if it's moving and cancel
---[[
-do
-    local GetUnitForFreshGUID = function(guid)
-        local targetGUID = UnitGUID('target')
-        if guid == targetGUID then
-            return "target"
-        end
 
-        return nameplateGUIDtoUnit[guid]
-    end
-
-    f:SetScript("OnUpdate", function(self, elapsed)
-        local guid, timeout = next(movecheckGUIDs)
+f:SetScript("OnUpdate", function()
+    local guid, cast = next(casters)
         while guid ~= nil do
-            -- Removing while iterating here, but it doesn't matter
-
-            local timeStart = MOVECHECK_TIMEOUT - timeout
-            if timeStart > 0.25 then
-                local unit = GetUnitForFreshGUID(guid)
-                if unit then
-                    if GetUnitSpeed(unit) ~= 0 then
+        if cast[5] < GetTime() - 10 then
                         CastStop(guid, nil, "INTERRUPTED")
-                        movecheckGUIDs[guid] = nil
                         return
                     end
-                end
-            end
 
-            movecheckGUIDs[guid] = timeout - elapsed
-            if timeout - elapsed < 0 then
-                movecheckGUIDs[guid] = nil
-            end
-            -- print(guid, movecheckGUIDs[guid])
 
-            guid, timeout = next(movecheckGUIDs, guid)
+        guid, cast = next(casters, guid)
         end
     end)
-end
 
+--[[
 ------------------------------
 
 if lib.NPCSpellsTimer then

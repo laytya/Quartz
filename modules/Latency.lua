@@ -65,6 +65,15 @@ function Latency:OnInitialize()
 	Quartz3:RegisterModuleOptions(MODNAME, getOptions, L["Latency"])
 end
 
+local function saveTime()
+	if not SpellIsTargeting() then
+		sendTime = GetTime()
+	else
+		sendTime = nil
+	end
+	
+end
+
 function Latency:OnEnable()
 	self:RawHook(Player, "UNIT_SPELLCAST_START")
 	self:RawHook(Player, "UNIT_SPELLCAST_DELAYED")
@@ -73,13 +82,13 @@ function Latency:OnEnable()
 	self:RegisterEvent("SPELLCAST_CHANNEL_STOP")
 	
 
-	self:SecureHook("CastSpellByName")
-	self:SecureHook("CastSpell")
-	self:SecureHook("UseAction")
-	self:SecureHook("UseContainerItem")
-	self:SecureHook("UseInventoryItem")
-	self:SecureHook("DoTradeSkill")
-	self:SecureHook("DoCraft")
+	self:SecureHook("CastSpellByName", saveTime )
+	self:SecureHook("CastSpell", saveTime)
+	self:SecureHook("UseAction", saveTime)
+	self:SecureHook("UseContainerItem", saveTime)
+	self:SecureHook("UseInventoryItem", saveTime)
+	self:SecureHook("DoTradeSkill", saveTime)
+	self:SecureHook("DoCraft", saveTime)
 	self:HookScript(WorldFrame, "OnMouseDown", 'WorldFrame_OnMouseDown')
 
 	media.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(mtype, override)
@@ -101,45 +110,39 @@ function Latency:OnDisable()
 	lagbox:Hide()
 	lagtext:Hide()
 end
+--[[
+
 
 function Latency:CastSpellByName(pass, onSelf)
-	sendTime = GetTime()	
-	dontCatch = false
+		
 end
 
 function Latency:CastSpell(pass, onSelf)
 	sendTime = GetTime()	
-	dontCatch = false
 end
 
 function Latency:UseAction(pass, cursor, onSelf)
 	sendTime = GetTime()	
-	dontCatch = false
 end
 
 function Latency:UseContainerItem(id, index)
 	sendTime = GetTime()
-	dontCatch = false
 end
 
 function Latency:UseInventoryItem(id, index)
 	sendTime = GetTime()
-	dontCatch = false
 end
 
 function Latency:DoTradeSkill(id, index)
 	sendTime = GetTime()
-	dontCatch = false
 end
 
 function Latency:DoCraft(id, index)
-	sendTime = GetTime()
-	dontCatch = true
+	sendTime = nil
 end
-
+]]
 function Latency:WorldFrame_OnMouseDown()
-	sendTime = GetTime()
-	dontCatch = false
+	saveTime()
 end
 
 local gatherSpells = {
@@ -159,10 +162,10 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 	self.hooks[object].UNIT_SPELLCAST_START(object, bar, unit, spell)
 	
 	
-	if gatherSpells[spell.id] then return end -- Open world object
+	-- if gatherSpells[spell.id] then return end -- Open world object
 
 	local startTime, endTime = bar.startTime, bar.endTime
-	if not sendTime or not endTime or dontCatch then return end
+	if not sendTime or not endTime then return end
 	
 	timeDiff = GetTime() - sendTime
 	local castlength = endTime - startTime
@@ -228,6 +231,9 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit, spell)
 	else
 		lagtext:Hide()
 	end
+
+	sendTime = nil
+
 end
 
 function Latency:UNIT_SPELLCAST_DELAYED(object, bar, unit, delay)
@@ -250,12 +256,14 @@ function Latency:UNIT_CASTEVENT()
 	if eventType == "FAIL" or  (eventType == "CAST" and Player.Bar.casting) then
 		lagbox:Hide()
 		lagtext:Hide()
+		sendTime = nil
 	end
 end
 
 function Latency:SPELLCAST_CHANNEL_STOP(s,d)
 	lagbox:Hide()
 	lagtext:Hide()
+	sendTime = nil
 end
 
 --[[

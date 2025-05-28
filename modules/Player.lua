@@ -151,6 +151,7 @@ function Player:OnEnable()
 		[SpellInfo(52516)] = 5, -- Icicles (52500)
 		-- hunter
 		[SpellInfo(1510)] = 6, -- volley
+		[SpellInfo(3662)] = 5, -- mend pet
 	} 
 	for s in pairs(slots) do
 		slots[s] = GetInventorySlotInfo (s.."Slot")
@@ -272,12 +273,11 @@ local function getSpelldHaste(unit)
     return positiveMul
 end
 
-local function checkMageT3Waist()
-	local link = GetInventoryItemLink("player", 6)
-	local _, _, link = string.find(link, "|c%x+|H(item:%d+:%d+:%d+:%d+)|h%[.-%]|h|r")
-	Gratuity:SetHyperlink(link)
-  local found = Gratuity:Find("duration of your Arcane Missiles",10,15,false,true,false)
-	return found ~= nil
+local function checkItemInSlot(item, slot)
+	if not item or not slot then  return false end
+	local link = GetInventoryItemLink("player", GetInventorySlotInfo(slot.."Slot"))
+	local _, _, itemId = string.find(link, "|c%x+|Hitem:(%d+):(%d+):(%d+):(%d+)|h%[.-%]|h|r")
+	return tonumber(itemId) == item
 end
 
 local function getHasteFromItems(unit)
@@ -315,7 +315,7 @@ local function getChannelingTicks(spell)
 	if not db.showticks then
 		return 0
 	end
-	if spell == SpellInfo(5143) and checkMageT3Waist() then  -- Arcane Missiles -- t3 waist arcane missiles
+	if spell == SpellInfo(5143) and checkItemInSlot( 47104, "Waist") then  -- Arcane Missiles -- t3 waist arcane missiles
 		return 6
 	end
 	return channelingTicks[spell] or 0
@@ -336,7 +336,7 @@ function Player:UNIT_SPELLCAST_START(bar, unit, spell)
 		if spell == SpellInfo(52516) and checkPlayerBuff(52500) then -- Flash Freeze
 			duration = duration * 0.2
 		elseif spell == SpellInfo(5143) then
-			if checkMageT3Waist() then
+			if checkItemInSlot( 47104, "Waist") then
 				duration = duration + 1
 			end
 			local k = isTalentKnown(1,15,1.05) -- Accelerated Arcana

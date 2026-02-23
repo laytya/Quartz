@@ -93,13 +93,14 @@ local Interrupts = {
 function Interrupt:OnInitialize()
 	self.db = Quartz3.db:RegisterNamespace(MODNAME, defaults)
 	db = self.db.profile
-	
+
 	self:SetEnabledState(Quartz3:GetModuleEnabled(MODNAME))
 	Quartz3:RegisterModuleOptions(MODNAME, getOptions, L["Interrupt"])
 end
 
 function Interrupt:OnEnable()
 	self:RegisterEvent("UNIT_CASTEVENT")
+	self:ApplySettings()
 end
 
 function Interrupt:ApplySettings()
@@ -112,15 +113,21 @@ function Interrupt:UNIT_CASTEVENT()
 	if eventType == "CAST" then
 		local spell = SpellInfo(spellId)
 		if (Interrupts[spell] ~= nil ) then
-			local bar
+			local bar, module
 	--		printT({unit,spell})
-			if UnitIsUnit(target, "player") then 
+			if UnitIsUnit(target, "player") then
 				bar = Player.Bar
+				module = Player
 			elseif UnitIsUnit(target, "target") then
 				bar = Target.Bar
+				module = Target
 			elseif UnitIsUnit(target, "pet") then
 				bar = Pet.Bar
+				module = Pet
 			else
+				return
+			end
+			if not module or not module:IsEnabled() or not bar or not bar.Text or not bar.Bar then
 				return
 			end
 			local sourceName = UnitName(caster)

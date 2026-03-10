@@ -175,7 +175,7 @@ function Enemy:UNIT_CASTEVENT()
 		casts[caster].endTime = casts[caster].startTime + casts[caster].duration
 
 		self:UpdateBars()
-	elseif (eventType == "FAIL" or eventType == "CAST" ) and casts[caster] and casts[caster].apellId == spellId  then
+	elseif (eventType == "FAIL" or eventType == "CAST" ) and casts[caster] and casts[caster].spellId == spellId  then
 		del(casts[caster])
 		casts[caster] = nil
 		self:UpdateBars()

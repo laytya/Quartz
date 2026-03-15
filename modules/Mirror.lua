@@ -522,13 +522,13 @@ do
 
 end
 function Mirror:CHAT_MSG_BG_SYSTEM_NEUTRAL(event, msg)
-	if msg:match(L["1 minute"]) or msg:match(L["One minute until"]) then
+	if arg1 and (string.find(arg1, L["1 minute"], 1, true) or string.find(arg1, L["One minute until"], 1, true)) then
 		gametimebase = GetTime()
 		gametimetostart = 60
-	elseif msg:match(L["30 seconds"]) or msg:match(L["Thirty seconds until"]) then
+	elseif arg1 and (string.find(arg1, L["30 seconds"], 1, true) or string.find(arg1, L["Thirty seconds until"], 1, true)) then
 		gametimebase = GetTime()
 		gametimetostart = 30
-	elseif msg:match(L["15 seconds"]) or msg:match(L["Fifteen seconds until"]) then
+	elseif arg1 and (string.find(arg1, L["15 seconds"], 1, true) or string.find(arg1, L["Fifteen seconds until"], 1, true)) then
 		gametimebase = GetTime()
 		gametimetostart = 15
 	end

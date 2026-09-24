@@ -23,6 +23,7 @@ local MODNAME = "GCD"
 local GCD = Quartz3:NewModule(MODNAME, "AceEvent-3.0")
 local Player = Quartz3:GetModule("Player")
 
+local media = LibStub("LibSharedMedia-3.0")
 ----------------------------
 -- Upvalues
 local CreateFrame, GetTime, UIParent, GetSpellCooldown = CreateFrame, GetTime, UIParent, GetSpellCooldown
@@ -50,10 +51,14 @@ local defaults = {
 }
 
 local function OnUpdate()
-	if not starttime then return gcdbar:Hide() end
+	if not starttime then 
+		gcdbar.duration:Hide()
+		return gcdbar:Hide() 
+	end
 	gcdspark:ClearAllPoints()
 	local perc = (GetTime() - starttime) / duration
 	if perc > 1 then
+		gcdbar.duration:Hide()
 		return gcdbar:Hide()
 	else
 		if db.deplete then
@@ -61,6 +66,7 @@ local function OnUpdate()
 		else
 			gcdspark:SetPoint("CENTER", gcdbar, "LEFT", gcdbar_width * perc, 0)
 		end
+		gcdbar.duration:SetText(format("%.1f", duration))
 	end
 end
 
@@ -93,6 +99,8 @@ function GCD:OnEnable()
 		
 		gcdspark = gcdbar:CreateTexture(nil, "DIALOG")
 		gcdbar:Hide()
+		gcdbar.duration = gcdbar:CreateFontString(nil, "OVERLAY")
+		gcdbar.duration:Hide()
 	end
 	self:ApplySettings()
 end
@@ -111,6 +119,7 @@ function GCD:UNIT_CASTEVENT()
 			starttime = start
 			duration = dur
 			gcdbar:Show()
+			gcdbar.duration:Show()
 		end
 	end
 end
@@ -139,6 +148,17 @@ function GCD:ApplySettings()
 		gcdspark:SetBlendMode("ADD")
 		gcdspark:SetWidth(25)
 		gcdspark:SetHeight(db.gcdheight*2.5)
+
+		gcdbar.duration:Show()
+		gcdbar.duration:ClearAllPoints()
+		gcdbar.duration:SetPoint("BOTTOMRIGHT", gcdbar, "BOTTOMRIGHT")
+		gcdbar.duration:SetJustifyH("RIGHT")
+		gcdbar.duration:SetFont(media:Fetch("font", Player.db.profile.font), 9)
+		gcdbar.duration:SetShadowColor( 0, 0, 0, 1)
+		gcdbar.duration:SetShadowOffset( 0.8, -0.8 )
+		gcdbar.duration:SetTextColor(1,1,1)
+		gcdbar.duration:SetNonSpaceWrap(false)
+		gcdbar.duration:SetWidth(gcdbar_width)
 	end
 end
 

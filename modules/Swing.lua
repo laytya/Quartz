@@ -197,6 +197,13 @@ local function ResetTimer(slot)
 	swingbar[slot]:Show()
 end
 
+function SwingStatus(slot, perc)
+	if not slot then slot = MAINHAND end
+	if perc and type(perc) == "number" and duration[slot] then 
+		return (duration[slot] - timer[slot]) / duration[slot] * 100 < perc
+	end
+	return timer[slot], duration[slot]
+end
 
 local function OnUpdate()
 

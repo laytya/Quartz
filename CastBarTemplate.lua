@@ -34,6 +34,8 @@ local getn, gsub = table.getn, string.gsub
 local UnitIsUnit = function(unit, target) if unit == "focus" or target == "focus" then return false end
 	return UnitIsUnit(unit, target) end
 
+local ICON_ENGI = "Interface\\Icons\\Trade_Engineering"
+
 local CastBarTemplate = CreateFrame("Frame")
 local CastBarTemplate_MT = {__index = CastBarTemplate}
 
@@ -282,7 +284,8 @@ function CastBarTemplate:UNIT_SPELLCAST_START(event, unit, spell)
 	self.Spark:Show()
 
 	if icon == "Interface\\Icons\\Temp" and Quartz3.db.profile.hidesamwise then
-		icon = nil
+		icon = 		ICON_ENGI
+
 	end
 	self.Icon:SetTexture(icon)
 

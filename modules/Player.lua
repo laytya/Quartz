@@ -253,8 +253,9 @@ local spellTimeDecreases = {
   [45425] = 1.05,		-- Hast pot
   [51270] = 1.2,		-- Enlightened State
   [42027] = 1.05,		-- Sulfuron Blaze
-  [57692] = 1.1
-    
+  [57692] = 1.1,
+  [16322] = 1.03 							--Juju Flurry
+
 }
 
 

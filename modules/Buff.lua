@@ -576,7 +576,6 @@ do
 								name = L["Gap"],
 								desc = L["Tweak the vertical position of the bars for your %s"]:format(L["Target"]),
 								min = -35, max = 35, step = 1,
-								order = 101,
 								hidden = gettargetnotfreeoptionshidden,
 								order = 104,
 							},

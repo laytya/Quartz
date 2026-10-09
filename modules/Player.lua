@@ -251,6 +251,9 @@ local spellTimeDecreases = {
 	--[26635] = 1.1,  -- Troll Race
 	[12042] = 1.3,		-- AP
   [45425] = 1.05,		-- Hast pot
+  [51270] = 1.2,		-- Enlightened State
+  [42027] = 1.05,		-- Sulfuron Blaze
+  [57692] = 1.1
     
 }
 
